@@ -1,19 +1,19 @@
-# Voyant Cloud SDK
+# Voyant Connect SDK
 
-Public TypeScript SDK for Voyant Cloud APIs.
+Public TypeScript SDK for Voyant Connect APIs.
 
-This repo owns the `@voyantjs/cloud-sdk` package and its supporting contract
+This repo owns the `@voyantjs/connect-sdk` package and its supporting contract
 tooling. It does not contain a docs app. For now, repo documentation lives as
 Markdown under [`docs/`](./docs).
 
 ## Packages
 
-- `@voyantjs/cloud-sdk`: client for Voyant Cloud vault, sms, and verification APIs
+- `@voyantjs/connect-sdk`: client for Voyant Connect operator, connection, gateway, and flight APIs
 - `@voyant-sdk/sdk-core`: private shared runtime bundled into the public package
 
 ## Workspace layout
 
-- `packages/cloud-sdk`: public Voyant Cloud SDK
+- `packages/connect-sdk`: public Voyant Connect SDK
 - `packages/sdk-core`: shared internal transport, auth, and error handling
 - `packages/eslint-config`: shared ESLint presets for the workspace
 - `packages/typescript-config`: shared TypeScript presets for the workspace
@@ -55,5 +55,5 @@ pnpm release
 - [Publishing](./docs/publishing.md)
 - [Package APIs](./docs/package-apis.md)
 - [FAQ](./docs/faq.md)
-- [Cloud SDK](./docs/cloud.md)
+- [Connect SDK](./docs/connect.md)
 - [Roadmap](./ROADMAP.md)

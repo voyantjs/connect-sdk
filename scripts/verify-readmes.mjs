@@ -22,8 +22,8 @@ function verifyRootReadme() {
   const source = readFile("README.md");
 
   const required = [
-    "# Voyant Cloud SDK",
-    "`@voyantjs/cloud-sdk`",
+    "# Voyant Connect SDK",
+    "`@voyantjs/connect-sdk`",
     "`@voyant-sdk/sdk-core`",
     "pnpm verify",
     "pnpm release",
@@ -33,7 +33,7 @@ function verifyRootReadme() {
     "pnpm verify:package-artifacts",
     "pnpm verify:package-manifests",
     "pnpm verify:readmes",
-    "[Cloud SDK](./docs/cloud.md)",
+    "[Connect SDK](./docs/connect.md)",
   ];
 
   for (const needle of required) {
@@ -116,7 +116,7 @@ function verifyContractsDoc() {
     "pnpm sync:contracts",
     "generated/public-routes.json",
     "`voyant-cloud`",
-    "`cloud-sdk`",
+    "`connect-sdk`",
   ];
 
   for (const needle of required) {
@@ -139,7 +139,10 @@ function extractTypeScriptSnippets(relativePath) {
 }
 
 function normalizeSnippet(source) {
-  return source.replaceAll("process.env.VOYANT_API_KEY!", '"cloud_key"');
+  return source
+    .replaceAll("process.env.VOYANT_API_KEY!", '"connect_key"')
+    .replaceAll("process.env.VOYANT_CONNECT_CLIENT_ID!", '"client_id"')
+    .replaceAll("process.env.VOYANT_CONNECT_CLIENT_SECRET!", '"client_secret"');
 }
 
 function verifyMarkdownExamplesTypecheck() {
@@ -152,8 +155,8 @@ function verifyMarkdownExamplesTypecheck() {
     mkdirSync(nodeModulesDir, { recursive: true });
     mkdirSync(voyantJsDir, { recursive: true });
     symlinkSync(
-      path.join(repoRoot, "packages", "cloud-sdk"),
-      path.join(voyantJsDir, "cloud-sdk"),
+      path.join(repoRoot, "packages", "connect-sdk"),
+      path.join(voyantJsDir, "connect-sdk"),
     );
     writeFileSync(
       path.join(tempDir, "package.json"),
@@ -186,8 +189,8 @@ function verifyMarkdownExamplesTypecheck() {
     );
 
     const snippetSources = [
-      "packages/cloud-sdk/README.md",
-      "docs/cloud.md",
+      "packages/connect-sdk/README.md",
+      "docs/connect.md",
     ].flatMap((relativePath) =>
       extractTypeScriptSnippets(relativePath).map((snippet, index) => ({
         filename: `snippet-${path
@@ -217,10 +220,10 @@ function verifyMarkdownExamplesTypecheck() {
 
 verifyRootReadme();
 verifyPackageReadme({
-  path: "packages/cloud-sdk/README.md",
-  packageName: "@voyantjs/cloud-sdk",
-  factoryName: "createVoyantCloudClient",
-  docLink: "[../../docs/cloud.md](../../docs/cloud.md)",
+  path: "packages/connect-sdk/README.md",
+  packageName: "@voyantjs/connect-sdk",
+  factoryName: "createVoyantConnectClient",
+  docLink: "[../../docs/connect.md](../../docs/connect.md)",
   envVar: "VOYANT_API_KEY",
 });
 verifyPublishingDoc();

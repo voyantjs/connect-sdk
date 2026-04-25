@@ -1,6 +1,6 @@
 # Testing
 
-This repo publishes SDK packages, so tests should focus on client behavior
+This repo publishes an SDK package, so tests should focus on client behavior
 rather than application behavior.
 
 ## What to test
@@ -23,7 +23,7 @@ rather than application behavior.
 ## Recommended layers
 
 - unit tests for `sdk-core` transport behavior
-- package tests for Cloud client method wiring
+- package tests for Connect client method wiring
 - fixture-based response tests for common endpoint shapes
 - publish verification tests for package exports and built files
 
@@ -32,13 +32,13 @@ rather than application behavior.
 The repo includes Node-native smoke tests under `tests/` that exercise:
 
 - `sdk-core` transport behavior against mocked `fetch`
-- Cloud route composition
+- Connect route composition
 - raw envelope handling for endpoints that opt out of default unwrapping
 
 ## Good test boundaries
 
 - `sdk-core` should be tested with mocked `fetch`
-- `@voyantjs/cloud-sdk` should verify route composition and option forwarding
+- `@voyantjs/connect-sdk` should verify route composition and option forwarding
 
 ## Contract drift
 

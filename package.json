@@ -1,5 +1,5 @@
 {
-  "name": "cloud-sdk",
+  "name": "connect-sdk",
   "private": true,
   "scripts": {
     "build": "pnpm -r --if-present run build",

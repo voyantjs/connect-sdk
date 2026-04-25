@@ -1,17 +1,17 @@
 # Repo Decisions
 
-`cloud-sdk` exists to publish the public `@voyantjs/cloud-sdk` package.
+`connect-sdk` exists to publish the public `@voyantjs/connect-sdk` package.
 
 ## What belongs here
 
-- the public `@voyantjs/cloud-sdk` package
+- the public `@voyantjs/connect-sdk` package
 - shared SDK runtime code consumed by that package
 - package-level tests
 - lightweight Markdown documentation
 
 ## What does not belong here
 
-- private Voyant Cloud implementation code
+- private Voyant Connect implementation code
 - product dashboards or internal tooling
 - a standalone docs app
 
@@ -21,11 +21,11 @@ generation.
 
 ## Package boundaries
 
-- `@voyantjs/cloud-sdk` is for Voyant Cloud services
+- `@voyantjs/connect-sdk` is for Voyant Connect services
 - `@voyant-sdk/sdk-core` is private and should contain only transport-level
   concerns
 
 ## Scope rule
 
 - no product-specific business logic in `sdk-core`
-- docs and examples should stay scoped to the Cloud surface
+- docs and examples should stay scoped to the Connect surface

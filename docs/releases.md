@@ -1,6 +1,6 @@
 # Release Model
 
-This repo publishes the `@voyantjs/cloud-sdk` package.
+This repo publishes the `@voyantjs/connect-sdk` package.
 
 ## Release expectations
 
@@ -9,7 +9,7 @@ This repo publishes the `@voyantjs/cloud-sdk` package.
 
 ## Stability model
 
-`@voyantjs/cloud-sdk` is the public SDK. `@voyant-sdk/sdk-core` is a private
+`@voyantjs/connect-sdk` is the public SDK. `@voyant-sdk/sdk-core` is a private
 runtime bundled into the public package and is not part of the public support
 surface.
 

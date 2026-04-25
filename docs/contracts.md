@@ -11,9 +11,11 @@ should only depend on exported contracts derived from that implementation.
 
 - `pnpm sync:contracts` rebuilds the route inventory from sibling `voyant-cloud`
   route files. It writes `generated/public-routes.json`.
-- `generated/public-routes.json`: flat list of public routes (method + path)
-  scraped from `voyant-cloud`. Consumed by `verify:api-parity` (server-side
-  drift) and `verify:client-route-coverage` (SDK-side drift).
+- `generated/public-routes.json` carries the `connect` array — the Connect API
+  routes (operator, connection, gateway, Connect-normalized reads, and
+  flights) consumed by `connect-sdk`.
+- the manifest is consumed by `verify:api-parity` (server-side drift) and
+  `verify:client-route-coverage` (SDK-side drift)
 
 ## Rules
 
@@ -23,9 +25,9 @@ should only depend on exported contracts derived from that implementation.
 
 ## Expected flow
 
-1. `voyant-cloud` defines or changes a public route.
-2. `cloud-sdk` runs `pnpm sync:contracts` to refresh `generated/public-routes.json`.
-3. `cloud-sdk` updates `packages/cloud-sdk/src/{client,types,index}.ts` to match.
+1. `voyant-cloud` defines or changes a public Connect API route.
+2. Run `pnpm sync:contracts` to refresh `generated/public-routes.json`.
+3. Update `packages/connect-sdk/src/{client,types,index}.ts` to match.
 4. `pnpm verify:client-route-coverage` and `pnpm verify:api-parity` confirm
    the SDK and the server are aligned.
 5. Package-level tests verify request shape, auth, and error handling.

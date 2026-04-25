@@ -97,7 +97,7 @@ export class VoyantTransport {
     this.userAgent = options.userAgent ?? "voyant-sdk";
   }
 
-  async request<T>(path: string, options: VoyantRequestOptions = {}) {
+  private buildRequest(path: string, options: VoyantRequestOptions = {}) {
     const url = new URL(normalizePath(path), this.baseUrl.endsWith("/") ? this.baseUrl : `${this.baseUrl}/`);
     appendQuery(url, options.query);
 
@@ -123,6 +123,27 @@ export class VoyantTransport {
         body = JSON.stringify(options.body);
       }
     }
+
+    return { url, headers, body };
+  }
+
+  /**
+   * Issue an authenticated request and return the raw `Response` so callers
+   * can stream the body (e.g. Server-Sent Events). Bypasses JSON parsing,
+   * envelope unwrapping, and error promotion.
+   */
+  async fetchRaw(path: string, options: VoyantRequestOptions = {}) {
+    const { url, headers, body } = this.buildRequest(path, options);
+    return this.fetchImpl(url, {
+      body,
+      headers,
+      method: options.method ?? "GET",
+      signal: options.signal,
+    });
+  }
+
+  async request<T>(path: string, options: VoyantRequestOptions = {}) {
+    const { url, headers, body } = this.buildRequest(path, options);
 
     const response = await this.fetchImpl(url, {
       body,

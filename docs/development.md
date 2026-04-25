@@ -24,13 +24,13 @@ pnpm verify
 Run a single package if needed:
 
 ```sh
-pnpm --filter @voyantjs/cloud-sdk check-types
-pnpm --filter @voyantjs/cloud-sdk lint
+pnpm --filter @voyantjs/connect-sdk check-types
+pnpm --filter @voyantjs/connect-sdk lint
 ```
 
 ## Workspace structure
 
-- `packages/cloud-sdk`: Voyant Cloud SDK
+- `packages/connect-sdk`: Voyant Connect SDK
 - `packages/sdk-core`: shared transport and error handling
 - `packages/eslint-config`: shared ESLint config
 - `packages/typescript-config`: shared TypeScript config

@@ -1,16 +1,16 @@
 {
-  "name": "@voyantjs/cloud-sdk",
+  "name": "@voyantjs/connect-sdk",
   "version": "0.1.0",
-  "description": "Public TypeScript SDK for Voyant Cloud APIs.",
+  "description": "Public TypeScript SDK for Voyant Connect APIs.",
   "license": "FSL-1.1-Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/cloud-sdk.git",
-    "directory": "packages/cloud-sdk"
+    "url": "https://github.com/voyantjs/connect-sdk.git",
+    "directory": "packages/connect-sdk"
   },
-  "homepage": "https://github.com/voyantjs/cloud-sdk#readme",
+  "homepage": "https://github.com/voyantjs/connect-sdk#readme",
   "bugs": {
-    "url": "https://github.com/voyantjs/cloud-sdk/issues"
+    "url": "https://github.com/voyantjs/connect-sdk/issues"
   },
   "type": "module",
   "main": "./dist/index.js",
@@ -18,7 +18,7 @@
   "sideEffects": false,
   "keywords": [
     "voyant",
-    "voyant-cloud",
+    "voyant-connect",
     "sdk",
     "typescript"
   ],

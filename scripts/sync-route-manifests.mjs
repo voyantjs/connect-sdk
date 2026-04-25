@@ -5,26 +5,42 @@ import process from "node:process";
 const repoRoot = path.resolve(import.meta.dirname, "..");
 const voyantCloudRepo = path.resolve(repoRoot, "../voyant-cloud");
 
-const sources = [
-  {
-    file: path.join(voyantCloudRepo, "apps/api/src/routes/vault.ts"),
-    pathPrefix: "/vault/v1",
-  },
-  {
-    file: path.join(voyantCloudRepo, "apps/api/src/routes/sms.ts"),
-    pathPrefix: "/sms/v1",
-  },
-  {
-    file: path.join(voyantCloudRepo, "apps/api/src/routes/email.ts"),
-    pathPrefix: "/email/v1",
-  },
-  {
-    file: path.join(voyantCloudRepo, "apps/api/src/routes/verify.ts"),
-    pathPrefix: "/verify/v1",
-  },
-];
+const connectSources = [
+  "audit-logs.ts",
+  "availability.ts",
+  "bookings.ts",
+  "connect-channel.ts",
+  "connect.ts",
+  "connections.ts",
+  "connector-providers.ts",
+  "custom-connection-requests.ts",
+  "flights.ts",
+  "grants.ts",
+  "invite-tokens.ts",
+  "links.ts",
+  "oauth-clients.ts",
+  "oauth-token.ts",
+  "operator-data.ts",
+  "operators.ts",
+  "products.ts",
+  "suppliers.ts",
+  "usage.ts",
+  "webhook-subscriptions.ts",
+].map((file) => ({
+  file: path.join(voyantCloudRepo, "apps/connect-api/src/routes/v1", file),
+  pathPrefix: "",
+}));
 
 const manifestFile = path.join(repoRoot, "generated", "public-routes.json");
+
+// Routes the public Connect SDK does not surface (different auth model or
+// internal-only). Kept in sync with verify-api-parity.mjs.
+const connectExclusions = new Set([
+  "POST /internal/operators/sync",
+]);
+
+const connectChannelExcluded = (route) =>
+  route.includes(" /v1/connect-channel/");
 
 function fileExists(filePath) {
   return fs.existsSync(filePath);
@@ -46,18 +62,20 @@ function extractRoutes(filePath, pathPrefix) {
   );
 }
 
-if (!sources.every((source) => fileExists(source.file))) {
+if (!connectSources.every((source) => fileExists(source.file))) {
   console.error(
     "Unable to sync route manifests: sibling voyant-cloud route files were not found.",
   );
   process.exit(1);
 }
 
-const cloudRoutes = sources
+const connectRoutes = connectSources
   .flatMap((source) => extractRoutes(source.file, source.pathPrefix))
+  .filter((route) => !connectExclusions.has(route))
+  .filter((route) => !connectChannelExcluded(route))
   .sort();
 
-const manifest = { cloud: cloudRoutes };
+const manifest = { connect: connectRoutes };
 
 fs.mkdirSync(path.dirname(manifestFile), { recursive: true });
 fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);

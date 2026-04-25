@@ -7,19 +7,38 @@ const repoRoot = path.resolve(import.meta.dirname, "..");
 const voyantCloudRepo = path.resolve(repoRoot, "../voyant-cloud");
 const manifestFile = path.join(repoRoot, "generated", "public-routes.json");
 
-const vaultRoutesFile = path.join(
-  voyantCloudRepo,
-  "apps/api/src/routes/vault.ts",
+const connectRouteFiles = [
+  "audit-logs.ts",
+  "availability.ts",
+  "bookings.ts",
+  "connect-channel.ts",
+  "connect.ts",
+  "connections.ts",
+  "connector-providers.ts",
+  "custom-connection-requests.ts",
+  "flights.ts",
+  "grants.ts",
+  "invite-tokens.ts",
+  "links.ts",
+  "oauth-clients.ts",
+  "oauth-token.ts",
+  "operator-data.ts",
+  "operators.ts",
+  "products.ts",
+  "suppliers.ts",
+  "usage.ts",
+  "webhook-subscriptions.ts",
+].map((file) =>
+  path.join(voyantCloudRepo, "apps/connect-api/src/routes/v1", file),
 );
-const smsRoutesFile = path.join(voyantCloudRepo, "apps/api/src/routes/sms.ts");
-const emailRoutesFile = path.join(
-  voyantCloudRepo,
-  "apps/api/src/routes/email.ts",
-);
-const verifyRoutesFile = path.join(
-  voyantCloudRepo,
-  "apps/api/src/routes/verify.ts",
-);
+
+// Routes the public Connect SDK intentionally does not surface (different
+// auth model or internal-only). Kept in sync with sync-route-manifests.mjs.
+const connectExclusions = new Set(["POST /internal/operators/sync"]);
+
+function isConnectChannelRoute(route) {
+  return route.includes(" /v1/connect-channel/");
+}
 
 function fileExists(filePath) {
   return fs.existsSync(filePath);
@@ -66,13 +85,7 @@ function verifyManifest(label, actualRoutes, expectedRoutes) {
   );
 }
 
-const requiredFiles = [
-  manifestFile,
-  vaultRoutesFile,
-  smsRoutesFile,
-  emailRoutesFile,
-  verifyRoutesFile,
-];
+const requiredFiles = [manifestFile, ...connectRouteFiles];
 
 if (!requiredFiles.every(fileExists)) {
   console.log(
@@ -83,13 +96,15 @@ if (!requiredFiles.every(fileExists)) {
 
 const manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
 
-const actualCloudRoutes = new Set([
-  ...extractRoutes(vaultRoutesFile, "/vault/v1"),
-  ...extractRoutes(smsRoutesFile, "/sms/v1"),
-  ...extractRoutes(emailRoutesFile, "/email/v1"),
-  ...extractRoutes(verifyRoutesFile, "/verify/v1"),
-]);
+const actualConnectRoutes = new Set();
+for (const file of connectRouteFiles) {
+  for (const route of extractRoutes(file)) {
+    if (connectExclusions.has(route)) continue;
+    if (isConnectChannelRoute(route)) continue;
+    actualConnectRoutes.add(route);
+  }
+}
 
-verifyManifest("Cloud", actualCloudRoutes, new Set(manifest.cloud));
+verifyManifest("Connect", actualConnectRoutes, new Set(manifest.connect));
 
-console.log("API parity verification passed for Cloud routes.");
+console.log("API parity verification passed for Connect routes.");

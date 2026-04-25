@@ -11,8 +11,8 @@ const packDir = mkdtempSync(path.join(tmpdir(), "voyant-sdk-pack-"));
 
 const packages = [
   {
-    dir: path.join(repoRoot, "packages", "cloud-sdk"),
-    expectedName: "@voyantjs/cloud-sdk",
+    dir: path.join(repoRoot, "packages", "connect-sdk"),
+    expectedName: "@voyantjs/connect-sdk",
   },
 ];
 
@@ -83,22 +83,31 @@ function verifyInstalledImports(tarballs) {
         "-e",
         `
           import assert from "node:assert/strict";
-          import { createVoyantCloudClient } from "@voyantjs/cloud-sdk";
+          import { createVoyantConnectClient } from "@voyantjs/connect-sdk";
 
-          const cloud = createVoyantCloudClient({ apiKey: "cloud_key" });
+          const connect = createVoyantConnectClient({ apiKey: "connect_key" });
 
-          assert.equal(typeof cloud.vault.listVaults, "function");
-          assert.equal(typeof cloud.vault.listSecrets, "function");
-          assert.equal(typeof cloud.vault.getSecret, "function");
-          assert.equal(typeof cloud.sms.listPhoneNumbers, "function");
-          assert.equal(typeof cloud.sms.listMessages, "function");
-          assert.equal(typeof cloud.sms.sendMessage, "function");
-          assert.equal(typeof cloud.verification.start, "function");
-          assert.equal(typeof cloud.verification.check, "function");
-          assert.equal(typeof cloud.verification.listAttempts, "function");
-          assert.equal(typeof cloud.email.listMessages, "function");
-          assert.equal(typeof cloud.email.sendMessage, "function");
-          assert.equal(typeof cloud.email.getMessage, "function");
+          assert.equal(typeof connect.oauth.issueToken, "function");
+          assert.equal(typeof connect.operators.list, "function");
+          assert.equal(typeof connect.operators.create, "function");
+          assert.equal(typeof connect.connections.list, "function");
+          assert.equal(typeof connect.connections.create, "function");
+          assert.equal(typeof connect.connections.rotateWebhookSecret, "function");
+          assert.equal(typeof connect.connectorProviders.list, "function");
+          assert.equal(typeof connect.connectorProviders.upsertRegistration, "function");
+          assert.equal(typeof connect.links.create, "function");
+          assert.equal(typeof connect.oauthClients.create, "function");
+          assert.equal(typeof connect.grants.create, "function");
+          assert.equal(typeof connect.auditLogs.list, "function");
+          assert.equal(typeof connect.inviteTokens.lookup, "function");
+          assert.equal(typeof connect.webhookSubscriptions.create, "function");
+          assert.equal(typeof connect.customConnectionRequests.create, "function");
+          assert.equal(typeof connect.gateway.createBooking, "function");
+          assert.equal(typeof connect.gateway.getAvailability, "function");
+          assert.equal(typeof connect.connect.listProducts, "function");
+          assert.equal(typeof connect.flights.search, "function");
+          assert.equal(typeof connect.flights.searchStream, "function");
+          assert.equal(typeof connect.flights.book, "function");
         `,
       ],
       {
@@ -155,103 +164,59 @@ function verifyInstalledTypecheck(tarballs) {
       path.join(appDir, "index.ts"),
       `
         import {
-          createVoyantCloudClient,
-          VoyantCloudClient,
-          type CheckVerificationInput,
-          type EmailMessageStatus,
-          type EmailMessageSummary,
-          type PhoneNumberCapabilities,
-          type PhoneNumberStatus,
-          type PhoneNumberSummary,
-          type SendEmailInput,
-          type SendSmsInput,
-          type SmsMessageStatus,
-          type SmsMessageSummary,
-          type StartVerificationInput,
-          type VaultSecretSummary,
-          type VaultSecretValue,
-          type VaultSummary,
-          type VerificationAttemptStatus,
-          type VerificationAttemptSummary,
-          type VerificationChannel,
-          type VerificationCheckResult,
-          type VoyantCloudClientOptions,
-        } from "@voyantjs/cloud-sdk";
+          createVoyantConnectClient,
+          VoyantConnectClient,
+          type AuditLogPage,
+          type ConnectionSummary,
+          type CreateConnectionInput,
+          type CreateOperatorInput,
+          type IssueTokenInput,
+          type OAuthTokenResponse,
+          type OperatorSummary,
+          type VoyantConnectClientOptions,
+        } from "@voyantjs/connect-sdk";
 
-        const cloud: VoyantCloudClient = createVoyantCloudClient({
-          apiKey: "cloud_key",
-        } satisfies VoyantCloudClientOptions);
+        const connect: VoyantConnectClient = createVoyantConnectClient({
+          apiKey: "connect_key",
+        } satisfies VoyantConnectClientOptions);
 
-        const vaultsPromise: Promise<VaultSummary[]> = cloud.vault.listVaults();
-        const secretsPromise: Promise<VaultSecretSummary[]> =
-          cloud.vault.listSecrets("primary");
-        const secretPromise: Promise<VaultSecretValue> = cloud.vault.getSecret(
-          "primary",
-          "stripe-key",
+        const tokenInput: IssueTokenInput = {
+          clientId: "client_id",
+          clientSecret: "client_secret",
+        };
+        const tokenPromise: Promise<OAuthTokenResponse> = connect.oauth.issueToken(tokenInput);
+
+        const operatorsPromise: Promise<OperatorSummary[]> = connect.operators.list();
+        const createOperatorInput: CreateOperatorInput = {
+          slug: "alpine",
+          name: "Alpine",
+        };
+        const operatorPromise: Promise<OperatorSummary> = connect.operators.create(createOperatorInput);
+
+        const connectionsPromise: Promise<ConnectionSummary[]> = connect.connections.list("op_1");
+        const createConnectionInput: CreateConnectionInput = {
+          supplierName: "Alpine Adventures",
+        };
+        const connectionPromise: Promise<ConnectionSummary> = connect.connections.create(
+          "op_1",
+          createConnectionInput,
         );
-        const phoneNumbersPromise: Promise<PhoneNumberSummary[]> =
-          cloud.sms.listPhoneNumbers();
-        const messagesPromise: Promise<SmsMessageSummary[]> =
-          cloud.sms.listMessages();
 
-        const sendInput: SendSmsInput = {
-          to: "+14155551234",
-          body: "Hello from Voyant Cloud",
-        };
-        const sendPromise: Promise<SmsMessageSummary> =
-          cloud.sms.sendMessage(sendInput);
+        const auditLogsPromise: Promise<AuditLogPage> = connect.auditLogs.list({});
+        const flightStreamPromise: Promise<Response> = connect.flights.searchStream({
+          origin: "DUB",
+          destination: "JFK",
+          departureDate: "2026-06-01",
+          passengers: [{ type: "adult", count: 1 }],
+        });
 
-        const startInput: StartVerificationInput = {
-          to: "+14155551234",
-          channel: "sms" satisfies VerificationChannel,
-        };
-        const startPromise: Promise<VerificationAttemptSummary> =
-          cloud.verification.start(startInput);
-        const checkInput: CheckVerificationInput = {
-          to: "+14155551234",
-          code: "123456",
-        };
-        const checkPromise: Promise<VerificationCheckResult> =
-          cloud.verification.check(checkInput);
-        const attemptsPromise: Promise<VerificationAttemptSummary[]> =
-          cloud.verification.listAttempts();
-
-        const emailListPromise: Promise<EmailMessageSummary[]> =
-          cloud.email.listMessages();
-        const emailSendInput: SendEmailInput = {
-          from: "noreply@example.com",
-          to: ["alice@example.com"],
-          subject: "Welcome",
-          text: "Hi",
-        };
-        const emailSendPromise: Promise<EmailMessageSummary> =
-          cloud.email.sendMessage(emailSendInput);
-        const emailGetPromise: Promise<EmailMessageSummary> =
-          cloud.email.getMessage("email_123");
-
-        const phoneStatus: PhoneNumberStatus = "active";
-        const messageStatus: SmsMessageStatus = "queued";
-        const attemptStatus: VerificationAttemptStatus = "pending";
-        const emailStatus: EmailMessageStatus = "delivered";
-        const capabilities: PhoneNumberCapabilities = { sms: true };
-
-        void vaultsPromise;
-        void secretsPromise;
-        void secretPromise;
-        void phoneNumbersPromise;
-        void messagesPromise;
-        void sendPromise;
-        void startPromise;
-        void checkPromise;
-        void attemptsPromise;
-        void emailListPromise;
-        void emailSendPromise;
-        void emailGetPromise;
-        void phoneStatus;
-        void messageStatus;
-        void attemptStatus;
-        void emailStatus;
-        void capabilities;
+        void tokenPromise;
+        void operatorsPromise;
+        void operatorPromise;
+        void connectionsPromise;
+        void connectionPromise;
+        void auditLogsPromise;
+        void flightStreamPromise;
       `,
     );
 

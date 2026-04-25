@@ -1,6 +1,6 @@
 # Roadmap
 
-This repo now has working public package surfaces, release scaffolding, CI,
+This repo now has a working public package surface, release scaffolding, CI,
 API parity checks, and packed-artifact verification. The remaining work before
 the first public release should stay focused on contract generation and final
 consumer polish.
@@ -13,14 +13,15 @@ consumer polish.
 - deepen package tests beyond the current smoke coverage
 - decide versioning policy for prerelease versus stable releases
 
-## Cloud SDK follow-up
+## Connect SDK follow-up
 
-- decide whether `SearchProtocol` should stay constrained to `"http" | "https"`
-  or remain a looser transport field
-- decide whether `providerStatus` on email messages is intentionally vendor
-  passthrough and should stay `string | null`
-- confirm whether `vault` should stay on the root client or move behind a more
-  explicit namespace in a later major version
+- expose the `/v1/connect-channel/*` ingestion surface (different auth model —
+  HMAC-signed payloads, not Bearer)
+- add an SSE parser for `flights.searchStream` so callers don't have to bring
+  one of their own
+- decide whether the gateway data plane (`gateway.*`) and the Connect-normalized
+  reads (`connect.*`) should stay as two parallel groups or merge in a future
+  major version
 
 ## Repo follow-up
 

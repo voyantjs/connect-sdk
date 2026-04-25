@@ -5,7 +5,13 @@ import ts from "typescript";
 
 const repoRoot = path.resolve(import.meta.dirname, "..");
 const routesFile = path.join(repoRoot, "generated", "public-routes.json");
-const cloudClientFile = path.join(repoRoot, "packages", "cloud-sdk", "src", "client.ts");
+const connectClientFile = path.join(
+  repoRoot,
+  "packages",
+  "connect-sdk",
+  "src",
+  "client.ts",
+);
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -60,7 +66,7 @@ function resolveRequestMethod(callExpression) {
   return "GET";
 }
 
-function extractClientRoutes(filePath) {
+function extractTransportRoutes(filePath) {
   const source = fs.readFileSync(filePath, "utf8");
   const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   const routes = new Set();
@@ -69,7 +75,8 @@ function extractClientRoutes(filePath) {
     if (
       ts.isCallExpression(node) &&
       ts.isPropertyAccessExpression(node.expression) &&
-      node.expression.name.text === "request"
+      (node.expression.name.text === "request" ||
+        node.expression.name.text === "fetchRaw")
     ) {
       const routePath = resolveRouteExpression(node.arguments[0], sourceFile);
 
@@ -107,11 +114,14 @@ function verifyProductCoverage(product, clientRoutes, manifestRoutes) {
 }
 
 assert.ok(fs.existsSync(routesFile), "generated/public-routes.json is missing.");
-assert.ok(fs.existsSync(cloudClientFile), "packages/cloud-sdk/src/client.ts is missing.");
+assert.ok(
+  fs.existsSync(connectClientFile),
+  "packages/connect-sdk/src/client.ts is missing.",
+);
 
 const routesManifest = readJson(routesFile);
-const cloudRoutes = extractClientRoutes(cloudClientFile);
+const connectRoutes = extractTransportRoutes(connectClientFile);
 
-verifyProductCoverage("Cloud", cloudRoutes, routesManifest.cloud);
+verifyProductCoverage("Connect", connectRoutes, routesManifest.connect);
 
 console.log("Client route coverage verification passed.");

@@ -40,6 +40,25 @@ importers:
         specifier: 5.9.2
         version: 5.9.2
 
+  packages/connect-sdk:
+    dependencies:
+      '@voyant-sdk/sdk-core':
+        specifier: workspace:*
+        version: link:../sdk-core
+    devDependencies:
+      '@voyant-sdk/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@voyant-sdk/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      eslint:
+        specifier: ^9.39.1
+        version: 9.39.4
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
+
   packages/eslint-config:
     devDependencies:
       '@eslint/js':

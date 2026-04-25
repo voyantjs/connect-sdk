@@ -1,6 +1,6 @@
 # Auth And Transport
 
-`@voyantjs/cloud-sdk` is built on an internal transport layer shared with
+`@voyantjs/connect-sdk` is built on an internal transport layer shared with
 sibling SDK packages.
 
 ## Default behavior
@@ -12,7 +12,7 @@ sibling SDK packages.
 
 ## Client options
 
-`@voyantjs/cloud-sdk` accepts transport-level options such as:
+`@voyantjs/connect-sdk` accepts transport-level options such as:
 
 - `apiKey`
 - `baseUrl`
