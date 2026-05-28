@@ -108,3 +108,19 @@ export function parseJsonCredentials(raw: string): unknown {
     });
   }
 }
+
+export {
+  CONNECTOR_WORKER_PROTOCOL_VERSION,
+  connectorError,
+  connectorWorkerManifestPath,
+  connectorWorkerOperationPaths,
+  ok,
+} from "./hosted-worker.js";
+export type {
+  ConnectorWorkerContext,
+  ConnectorWorkerManifest,
+  ConnectorWorkerOperation,
+  ConnectorWorkerRequest,
+  ConnectorWorkerResponse,
+  HostedConnectorWorkerDeployment,
+} from "./hosted-worker.js";

@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/connect-provider-sdk",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Public SDK primitives for building Voyant Connect provider integrations.",
   "license": "FSL-1.1-Apache-2.0",
   "repository": {
@@ -27,9 +27,15 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./dist/index.js"
+    },
+    "./hosted-worker": {
+      "types": "./src/hosted-worker.ts",
+      "default": "./dist/hosted-worker.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "lint": "eslint src --max-warnings 0",
@@ -49,6 +55,10 @@
       ".": {
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
+      },
+      "./hosted-worker": {
+        "types": "./dist/hosted-worker.d.ts",
+        "import": "./dist/hosted-worker.js"
       }
     }
   }

@@ -40,6 +40,16 @@ const packages = [
     dependencies: {},
     bundleDependencies: undefined,
     bundledFiles: [],
+    extraExports: {
+      "./hosted-worker": {
+        import: "./dist/hosted-worker.js",
+        types: "./dist/hosted-worker.d.ts",
+      },
+    },
+    extraFiles: [
+      "package/dist/hosted-worker.js",
+      "package/dist/hosted-worker.d.ts",
+    ],
   },
   {
     dir: path.join(repoRoot, "packages", "connect-cruises"),
@@ -121,6 +131,7 @@ function verifyInstalledImports(tarballs) {
           import assert from "node:assert/strict";
           import { createVoyantConnectClient } from "@voyantjs/connect-sdk";
           import { defineConnectProvider } from "@voyantjs/connect-provider-sdk";
+          import { CONNECTOR_WORKER_PROTOCOL_VERSION } from "@voyantjs/connect-provider-sdk/hosted-worker";
           import { createConnectCruiseAdapter } from "@voyantjs/connect-cruises";
 
           const connect = createVoyantConnectClient({ apiKey: "connect_key" });
@@ -163,6 +174,7 @@ function verifyInstalledImports(tarballs) {
           assert.equal(typeof connect.flights.search, "function");
           assert.equal(typeof connect.flights.searchStream, "function");
           assert.equal(typeof connect.flights.book, "function");
+          assert.equal(CONNECTOR_WORKER_PROTOCOL_VERSION, "2026-05-28");
           assert.equal(provider.key, "example-cruises");
           assert.equal(typeof cruiseAdapter.listEntries, "function");
         `,
@@ -237,6 +249,16 @@ function verifyInstalledTypecheck(tarballs) {
           type ConnectProviderDescriptor,
         } from "@voyantjs/connect-provider-sdk";
         import {
+          CONNECTOR_WORKER_PROTOCOL_VERSION,
+          connectorError,
+          connectorWorkerManifestPath,
+          connectorWorkerOperationPaths,
+          ok,
+          type ConnectorWorkerManifest,
+          type ConnectorWorkerRequest,
+          type ConnectorWorkerResponse,
+        } from "@voyantjs/connect-provider-sdk/hosted-worker";
+        import {
           createConnectCruiseAdapter,
           type ConnectCruiseAdapter,
         } from "@voyantjs/connect-cruises";
@@ -283,6 +305,23 @@ function verifyInstalledTypecheck(tarballs) {
           categoryCoverage: ["cruise"],
         });
         const cruiseAdapter: ConnectCruiseAdapter = createConnectCruiseAdapter({ client: connect });
+        const manifest: ConnectorWorkerManifest = {
+          protocolVersion: CONNECTOR_WORKER_PROTOCOL_VERSION,
+          providerKey: "example-cruises",
+          categories: ["cruise"],
+          capabilities: ["validateCredentials", "health"],
+        };
+        const workerRequest: ConnectorWorkerRequest = {
+          protocolVersion: CONNECTOR_WORKER_PROTOCOL_VERSION,
+          operation: "validateCredentials",
+          context: { connectionId: "conn_1" },
+          input: {},
+        };
+        const workerResponse: ConnectorWorkerResponse = ok({
+          path: connectorWorkerManifestPath,
+          validatePath: connectorWorkerOperationPaths.validateCredentials,
+        });
+        const workerError: ConnectorWorkerResponse = connectorError("invalid_credentials", "Nope");
 
         void tokenPromise;
         void operatorsPromise;
@@ -293,6 +332,10 @@ function verifyInstalledTypecheck(tarballs) {
         void flightStreamPromise;
         void provider;
         void cruiseAdapter;
+        void manifest;
+        void workerRequest;
+        void workerResponse;
+        void workerError;
       `,
     );
 
@@ -324,6 +367,9 @@ try {
     assert.equal(manifest.publishConfig?.access, "public");
     assert.equal(manifest.exports?.["."].import, "./dist/index.js");
     assert.equal(manifest.exports?.["."].types, "./dist/index.d.ts");
+    for (const [subpath, expectedExport] of Object.entries(pkg.extraExports ?? {})) {
+      assert.deepEqual(manifest.exports?.[subpath], expectedExport);
+    }
 
     if (pkg.bundleDependencies === undefined) {
       assert.equal(manifest.bundleDependencies, undefined);
@@ -338,6 +384,9 @@ try {
     assert.ok(files.includes("package/package.json"));
     assert.ok(files.includes("package/dist/index.js"));
     assert.ok(files.includes("package/dist/index.d.ts"));
+    for (const extraFile of pkg.extraFiles ?? []) {
+      assert.ok(files.includes(extraFile));
+    }
     for (const bundledFile of pkg.bundledFiles) {
       assert.ok(files.includes(bundledFile));
     }

@@ -32,7 +32,14 @@ function verifyRootPackage() {
 
 function verifyPublicPackage(
   relativePath,
-  { name, descriptionKeyword, dependencies = {}, bundleDependencies },
+  {
+    name,
+    descriptionKeyword,
+    dependencies = {},
+    bundleDependencies,
+    extraExports = {},
+    extraPublishExports = {},
+  },
 ) {
   const manifest = readJson(relativePath);
 
@@ -71,6 +78,7 @@ function verifyPublicPackage(
         types: "./src/index.ts",
         default: "./dist/index.js",
       },
+      ...extraExports,
     },
     `${relativePath} exports`,
   );
@@ -85,6 +93,7 @@ function verifyPublicPackage(
           types: "./dist/index.d.ts",
           import: "./dist/index.js",
         },
+        ...extraPublishExports,
       },
     },
     `${relativePath} publishConfig`,
@@ -137,6 +146,18 @@ verifyPublicPackage("packages/connect-sdk/package.json", {
 verifyPublicPackage("packages/connect-provider-sdk/package.json", {
   name: "@voyantjs/connect-provider-sdk",
   descriptionKeyword: "provider integrations",
+  extraExports: {
+    "./hosted-worker": {
+      types: "./src/hosted-worker.ts",
+      default: "./dist/hosted-worker.js",
+    },
+  },
+  extraPublishExports: {
+    "./hosted-worker": {
+      types: "./dist/hosted-worker.d.ts",
+      import: "./dist/hosted-worker.js",
+    },
+  },
 });
 verifyPublicPackage("packages/connect-cruises/package.json", {
   name: "@voyantjs/connect-cruises",
