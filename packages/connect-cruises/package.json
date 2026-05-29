@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/connect-cruises",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Voyant Connect cruises adapter for Voyant deployments.",
   "license": "FSL-1.1-Apache-2.0",
   "repository": {
@@ -30,7 +30,9 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "lint": "eslint src --max-warnings 0",
