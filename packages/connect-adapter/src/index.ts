@@ -611,17 +611,12 @@ async function getContentFromConnect(
 ): Promise<GetContentResult> {
   const connectionId = requireConnectConnectionId(ctx);
   const module = request.entity_module;
-  let content: unknown;
   if (module.includes("cruise")) {
-    const row = await client.cruises.getOnConnection(
-      connectionId,
-      request.entity_id,
-      {
-        locale: request.locale,
-      },
-    );
-    content = row;
-  } else if (module.includes("accommodation") || module.includes("stay")) {
+    return getCruiseContentFromConnect(client, connectionId, request);
+  }
+
+  let content: unknown;
+  if (module.includes("accommodation") || module.includes("stay")) {
     const row = await client.accommodations.getOnConnection(
       connectionId,
       request.entity_id,
@@ -646,6 +641,364 @@ async function getContentFromConnect(
     content_schema_version: `${request.entity_module}/connect-v1`,
     source_updated_at: new Date(),
   };
+}
+
+async function getCruiseContentFromConnect(
+  client: VoyantConnectClient,
+  connectionId: string,
+  request: GetContentRequest,
+): Promise<GetContentResult> {
+  const cruise = await resolveCruiseRow(client, connectionId, request);
+  const cruiseExternalId =
+    getString(cruise, "externalId") ??
+    preferredSourceRefForEntityId(request.entity_id) ??
+    request.entity_id;
+  const cruiseLineExternalId =
+    getString(cruise, "cruiseLineExternalId") ??
+    getString(getRecord(cruise, "payload"), "cruiseLineExternalId");
+  const shipExternalId =
+    getString(cruise, "shipExternalId") ??
+    getString(getRecord(cruise, "payload"), "shipExternalId") ??
+    getString(getRecord(cruise, "payload"), "shipId");
+
+  const sailings = await client.cruises.listSailingsOnConnection(connectionId, {
+    cruiseExternalId,
+    limit: 200,
+  });
+  const ship = await resolveCruiseShip(client, connectionId, {
+    ...(cruiseLineExternalId ? { cruiseLineExternalId } : {}),
+    ...(shipExternalId ? { shipExternalId } : {}),
+    locale: request.locale,
+  });
+  const cabinCategories = shipExternalId
+    ? await client.cruises.listCabinCategories(connectionId, shipExternalId, {
+        locale: request.locale,
+      })
+    : [];
+  const itineraryStops = await resolveCruiseItineraryStops(
+    client,
+    connectionId,
+    sailings,
+  );
+
+  return {
+    entity_module: request.entity_module,
+    entity_id: request.entity_id,
+    source_ref: cruiseExternalId,
+    returned_locale: getString(cruise, "locale") ?? request.locale,
+    content: {
+      cruise: toCruiseContentSummary(cruise, request.entity_id),
+      ship: ship ? toCruiseContentShip(ship) : null,
+      sailings: sailings
+        .map((sailing) => toCruiseContentSailing(sailing))
+        .filter((sailing): sailing is JsonRecord => sailing !== null),
+      cabin_categories: cabinCategories
+        .map((category) => toCruiseContentCabinCategory(category))
+        .filter((category): category is JsonRecord => category !== null),
+      itinerary_stops: itineraryStops,
+      policies: toCruiseContentPolicies(cruise),
+    },
+    content_schema_version: "cruises/v1",
+    source_updated_at:
+      dateFromString(getString(cruise, "updatedAt")) ??
+      dateFromString(getString(cruise, "lastSyncedAt")) ??
+      new Date(),
+  };
+}
+
+async function resolveCruiseRow(
+  client: VoyantConnectClient,
+  connectionId: string,
+  request: GetContentRequest,
+): Promise<JsonRecord> {
+  const candidates = sourceRefCandidatesForEntityId(request.entity_id);
+  const directCandidates =
+    candidates.length > 1
+      ? candidates.filter((candidate) => candidate !== request.entity_id)
+      : candidates;
+  for (const candidate of directCandidates) {
+    const row = await tryGetCruiseOnConnection(
+      client,
+      connectionId,
+      candidate,
+      request.locale,
+    );
+    if (row) return row;
+  }
+
+  const listedWithLocale = await client.cruises.listOnConnection(connectionId, {
+    locale: request.locale,
+    limit: 500,
+  });
+  const localeMatch = listedWithLocale.find((row) =>
+    cruiseRowMatchesSourceRef(row, candidates),
+  );
+  if (localeMatch) return localeMatch;
+
+  const listed = await client.cruises.listOnConnection(connectionId, {
+    limit: 500,
+  });
+  const match = listed.find((row) =>
+    cruiseRowMatchesSourceRef(row, candidates),
+  );
+  if (match) return match;
+
+  throw new Error(
+    `Connect cruise content not found for ${request.entity_id} on ${connectionId}`,
+  );
+}
+
+async function tryGetCruiseOnConnection(
+  client: VoyantConnectClient,
+  connectionId: string,
+  cruiseId: string,
+  locale: string,
+): Promise<JsonRecord | null> {
+  try {
+    return await client.cruises.getOnConnection(connectionId, cruiseId, {
+      locale,
+    });
+  } catch (error) {
+    if (isNotFoundError(error)) return null;
+    throw error;
+  }
+}
+
+async function resolveCruiseShip(
+  client: VoyantConnectClient,
+  connectionId: string,
+  options: {
+    cruiseLineExternalId?: string;
+    shipExternalId?: string;
+    locale: string;
+  },
+): Promise<JsonRecord | null> {
+  if (!options.cruiseLineExternalId && !options.shipExternalId) return null;
+  const ships = await client.cruises.listShips(connectionId, {
+    ...(options.cruiseLineExternalId
+      ? { cruiseLineExternalId: options.cruiseLineExternalId }
+      : {}),
+    locale: options.locale,
+    limit: 100,
+  });
+  if (!options.shipExternalId) return ships[0] ?? null;
+  const refs = sourceRefCandidatesForEntityId(options.shipExternalId);
+  return ships.find((ship) => recordMatchesAnyRef(ship, refs)) ?? null;
+}
+
+async function resolveCruiseItineraryStops(
+  client: VoyantConnectClient,
+  connectionId: string,
+  sailings: JsonRecord[],
+): Promise<JsonRecord[]> {
+  const fromPayload = sailings.flatMap((sailing) =>
+    getRecordArray(getRecord(sailing, "payload"), "itinerary")
+      .map((day) => toCruiseContentItineraryStop(day))
+      .filter((day): day is JsonRecord => day !== null),
+  );
+  if (fromPayload.length > 0) return fromPayload;
+
+  const sailingExternalId =
+    getString(sailings[0] ?? {}, "externalId") ??
+    getString(getRecord(sailings[0] ?? {}, "payload"), "externalId");
+  if (!sailingExternalId) return [];
+  const days = await client.cruises.listItinerary(
+    connectionId,
+    sailingExternalId,
+  );
+  return days
+    .map((day) => toCruiseContentItineraryStop(day))
+    .filter((day): day is JsonRecord => day !== null);
+}
+
+function toCruiseContentSummary(
+  cruise: JsonRecord,
+  entityId: string,
+): JsonRecord {
+  const payload = getRecord(cruise, "payload");
+  return {
+    id: entityId,
+    name: getString(cruise, "name") ?? getString(payload, "name") ?? entityId,
+    status: getString(cruise, "status") ?? getString(payload, "status"),
+    description:
+      getString(payload, "description") ??
+      getString(cruise, "description") ??
+      getString(payload, "summary") ??
+      null,
+    cruise_type:
+      getString(cruise, "cruiseType") ??
+      getString(payload, "cruiseType") ??
+      null,
+    hero_image_url: getCruiseHeroImageUrl(cruise) ?? null,
+    highlights: getStringArray(payload, "highlights") ?? [],
+    cruise_line:
+      getString(payload, "cruiseLineName") ??
+      getString(payload, "cruiseLine") ??
+      getString(cruise, "cruiseLineExternalId") ??
+      null,
+    duration_nights:
+      getNumber(cruise, "nights") ?? getNumber(payload, "nights"),
+    embarkation_port: getPortLabel(
+      cruise,
+      payload,
+      "embarkationPort",
+      "embarkationPortCode",
+    ),
+    disembarkation_port: getPortLabel(
+      cruise,
+      payload,
+      "disembarkationPort",
+      "disembarkationPortCode",
+    ),
+  };
+}
+
+function toCruiseContentShip(ship: JsonRecord): JsonRecord | null {
+  const payload = getRecord(ship, "payload");
+  const name = getString(ship, "name") ?? getString(payload, "name");
+  if (!name) return null;
+  return {
+    id:
+      getString(ship, "externalId") ??
+      getString(payload, "externalId") ??
+      getString(ship, "id") ??
+      null,
+    name,
+    description:
+      getString(payload, "description") ??
+      getString(ship, "description") ??
+      null,
+    capacity:
+      getNumber(ship, "capacityGuests") ??
+      getNumber(payload, "capacityGuests") ??
+      getNumber(payload, "capacity") ??
+      null,
+    decks:
+      getNumber(ship, "deckCount") ??
+      getNumber(payload, "deckCount") ??
+      getNumber(payload, "decks") ??
+      null,
+    year_built:
+      getNumber(ship, "yearBuilt") ?? getNumber(payload, "yearBuilt") ?? null,
+  };
+}
+
+function toCruiseContentSailing(sailing: JsonRecord): JsonRecord | null {
+  const payload = getRecord(sailing, "payload");
+  const sourceRef =
+    getString(sailing, "externalId") ??
+    getString(payload, "externalId") ??
+    getString(sailing, "id");
+  const startDate =
+    getString(sailing, "departureDate") ?? getString(payload, "departureDate");
+  const endDate =
+    getString(sailing, "returnDate") ?? getString(payload, "returnDate");
+  if (!sourceRef || !startDate || !endDate) return null;
+  return {
+    id: sourceRef,
+    source_ref: sourceRef,
+    start_date: startDate,
+    end_date: endDate,
+    duration_nights:
+      getNumber(sailing, "nights") ??
+      getNumber(payload, "nights") ??
+      durationNights(startDate, endDate),
+    status:
+      getString(sailing, "salesStatus") ??
+      getString(payload, "salesStatus") ??
+      null,
+    embarkation_port: getPortLabel(
+      sailing,
+      payload,
+      "embarkationPort",
+      "embarkationPortCode",
+    ),
+    disembarkation_port: getPortLabel(
+      sailing,
+      payload,
+      "disembarkationPort",
+      "disembarkationPortCode",
+    ),
+  };
+}
+
+function toCruiseContentCabinCategory(category: JsonRecord): JsonRecord | null {
+  const payload = getRecord(category, "payload");
+  const sourceRef =
+    getString(category, "externalId") ??
+    getString(payload, "externalId") ??
+    getString(category, "id");
+  const name = getString(category, "name") ?? getString(payload, "name");
+  if (!sourceRef || !name) return null;
+  return {
+    id: sourceRef,
+    code: getString(category, "code") ?? getString(payload, "code") ?? null,
+    name,
+    description:
+      getString(payload, "description") ??
+      getString(category, "description") ??
+      null,
+    type:
+      getString(category, "roomType") ?? getString(payload, "roomType") ?? null,
+    capacity_min: getNumber(payload, "minOccupancy"),
+    capacity_max:
+      getNumber(category, "maxTotal") ??
+      getNumber(payload, "maxTotal") ??
+      getNumber(getRecord(category, "maxOccupancy"), "total") ??
+      getNumber(getRecord(payload, "maxOccupancy"), "total") ??
+      getNumber(payload, "maxOccupancy"),
+    inclusions:
+      getStringArray(category, "features") ??
+      getStringArray(payload, "features") ??
+      [],
+  };
+}
+
+function toCruiseContentItineraryStop(day: JsonRecord): JsonRecord | null {
+  const dayNumber = getNumber(day, "dayNumber") ?? getNumber(day, "day_number");
+  if (dayNumber === null || dayNumber < 1) return null;
+  return {
+    day_number: dayNumber,
+    date: getString(day, "date") ?? null,
+    port_name:
+      getString(day, "portName") ??
+      getString(day, "port_name") ??
+      getString(day, "title") ??
+      "",
+    arrival_time:
+      getString(day, "arriveAt") ??
+      getString(day, "arrivalTime") ??
+      getString(day, "arrival_time") ??
+      null,
+    departure_time:
+      getString(day, "departAt") ??
+      getString(day, "departureTime") ??
+      getString(day, "departure_time") ??
+      null,
+    description: getString(day, "description") ?? null,
+    is_at_sea:
+      getBoolean(day, "isSeaDay") ||
+      getBoolean(day, "is_at_sea") ||
+      getString(day, "portName") === undefined,
+  };
+}
+
+function toCruiseContentPolicies(cruise: JsonRecord): JsonRecord[] {
+  const payload = getRecord(cruise, "payload");
+  const policies: JsonRecord[] = [];
+  const inclusions = textListFromUnknown(payload.inclusions);
+  if (inclusions.length > 0) {
+    policies.push({
+      kind: "supplier_notes",
+      body: `Inclusions: ${inclusions.join(", ")}`,
+    });
+  }
+  const notes =
+    getString(payload, "supplierNotes") ??
+    getString(payload, "terms") ??
+    getString(payload, "policy");
+  if (notes) policies.push({ kind: "supplier_notes", body: notes });
+  return policies;
 }
 
 async function reserveThroughConnect(
@@ -791,6 +1144,150 @@ function getSourceRef(payload: JsonRecord, fallback: string): string {
   return getString(payload, "productId") ?? fallback;
 }
 
+function sourceRefCandidatesForEntityId(entityId: string): string[] {
+  const candidates: string[] = [];
+  const add = (value: string | undefined) => {
+    if (value && !candidates.includes(value)) candidates.push(value);
+  };
+  if (entityId.startsWith("crus_")) add(entityId.slice("crus_".length));
+  const parts = entityId.split(":");
+  if (parts.length > 1) {
+    const withoutKind = parts.slice(1);
+    let strippedLocale = false;
+    if (
+      withoutKind.length > 1 &&
+      isLocaleTag(withoutKind[withoutKind.length - 1])
+    ) {
+      add(withoutKind.slice(0, -1).join(":"));
+      strippedLocale = true;
+    }
+    if (!strippedLocale) add(withoutKind.join(":"));
+  }
+  add(entityId);
+  try {
+    const decoded = decodeURIComponent(entityId);
+    if (decoded !== entityId) add(decoded);
+  } catch {
+    // Keep the raw id when it is not URI-encoded.
+  }
+  return candidates;
+}
+
+function preferredSourceRefForEntityId(entityId: string): string | undefined {
+  return sourceRefCandidatesForEntityId(entityId).find(
+    (candidate) => candidate !== entityId,
+  );
+}
+
+function isLocaleTag(value: string | undefined): boolean {
+  return value ? /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(value) : false;
+}
+
+function cruiseRowMatchesSourceRef(
+  row: JsonRecord,
+  candidates: string[],
+): boolean {
+  return recordMatchesAnyRef(row, candidates);
+}
+
+function recordMatchesAnyRef(row: JsonRecord, candidates: string[]): boolean {
+  const refs = new Set(candidates);
+  const payload = getRecord(row, "payload");
+  for (const ref of [
+    getString(row, "id"),
+    getString(row, "externalId"),
+    getString(row, "sourceRef"),
+    getString(row, "documentExternalId"),
+    getString(payload, "id"),
+    getString(payload, "externalId"),
+    getString(payload, "sourceRef"),
+    getString(payload, "documentExternalId"),
+  ]) {
+    if (!ref) continue;
+    if (
+      sourceRefCandidatesForEntityId(ref).some((candidate) =>
+        refs.has(candidate),
+      )
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function getCruiseHeroImageUrl(cruise: JsonRecord): string | undefined {
+  const payload = getRecord(cruise, "payload");
+  const direct =
+    getString(cruise, "heroImageUrl") ??
+    getString(payload, "heroImageUrl") ??
+    getString(payload, "imageUrl");
+  if (direct) return direct;
+  for (const item of [
+    ...getRecordArray(cruise, "media"),
+    ...getRecordArray(payload, "media"),
+  ]) {
+    const url = getString(item, "url");
+    if (url) return url;
+  }
+  return undefined;
+}
+
+function getPortLabel(
+  row: JsonRecord,
+  payload: JsonRecord,
+  objectKey: string,
+  codeKey: string,
+): string | null {
+  const port = getRecord(payload, objectKey);
+  return (
+    getString(port, "name") ??
+    getString(port, "label") ??
+    getString(row, codeKey) ??
+    getString(payload, codeKey) ??
+    null
+  );
+}
+
+function durationNights(startDate: string, endDate: string): number | null {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime())) {
+    return null;
+  }
+  return Math.max(
+    0,
+    Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)),
+  );
+}
+
+function textListFromUnknown(value: unknown): string[] {
+  if (typeof value === "string" && value.length > 0) return [value];
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object" && !Array.isArray(item)) {
+        const record = item as JsonRecord;
+        return (
+          getString(record, "label") ??
+          getString(record, "name") ??
+          getString(record, "description") ??
+          getString(record, "body")
+        );
+      }
+      return undefined;
+    })
+    .filter((item): item is string => item !== undefined);
+}
+
+function isNotFoundError(error: unknown): boolean {
+  return (
+    error !== null &&
+    typeof error === "object" &&
+    (error as { status?: unknown }).status === 404
+  );
+}
+
 function isCatalogProjection(value: unknown): value is CatalogProjection {
   if (!value || typeof value !== "object") return false;
   const record = value as JsonRecord;
@@ -816,6 +1313,15 @@ function getRecordOrNull(record: JsonRecord, key: string): JsonRecord | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as JsonRecord)
     : null;
+}
+
+function getRecordArray(record: JsonRecord, key: string): JsonRecord[] {
+  const value = record[key];
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (item): item is JsonRecord =>
+      item !== null && typeof item === "object" && !Array.isArray(item),
+  );
 }
 
 function getString(record: JsonRecord, key: string): string | undefined {

@@ -23,9 +23,11 @@ function createRecorder(responses) {
       });
 
       const responseBody = queue.shift() ?? {};
-      return new Response(JSON.stringify(responseBody), {
+      const status = responseBody.__status ?? 200;
+      const body = responseBody.__body ?? responseBody;
+      return new Response(JSON.stringify(body), {
         headers: { "content-type": "application/json" },
-        status: 200,
+        status,
       });
     },
   };
@@ -142,7 +144,10 @@ test("connect adapter maps flat live API search document rows", () => {
   assert.equal(projection.provenance.source_provider, "uniworld");
   assert.equal(projection.provenance.source_connection_id, "conn_1");
   assert.equal(projection.fields.title, "A Portrait of Majestic France");
-  assert.equal(projection.fields.thumbnailUrl, "https://example.com/cruise.jpg");
+  assert.equal(
+    projection.fields.thumbnailUrl,
+    "https://example.com/cruise.jpg",
+  );
   assert.deepEqual(projection.fields.destinations, ["France"]);
 });
 
@@ -293,6 +298,106 @@ test("connect adapter generic liveResolve includes price hints from availability
   });
   assert.equal(result.values.prod_1.lowestPriceCached, "99.00");
   assert.equal(result.values.prod_1.lowestPriceCachedCurrency, "EUR");
+});
+
+test("connect adapter getContent returns normalized cruise content for flat search docs", async () => {
+  const recorder = createRecorder([
+    {
+      __status: 404,
+      __body: { error: { code: "NOT_FOUND", message: "Cruise not found" } },
+    },
+    [
+      {
+        id: "ccr_01kstcv2hefah8sg4p5myhq63v",
+        externalId: "308_54-until-2026",
+        connectionId: "conn_1",
+        cruiseLineExternalId: "uniworld",
+        shipExternalId: "ss_joy",
+        name: "Wine Roads of France & Portugal",
+        cruiseType: "river",
+        nights: 12,
+        embarkationPortCode: "BOD",
+        disembarkationPortCode: "LIS",
+        locale: "en",
+        updatedAt: "2026-05-29T18:30:00.000Z",
+        media: [{ url: "https://example.com/cruise.jpg" }],
+        payload: {
+          description:
+            "A wine-focused river cruise through France and Portugal.",
+          highlights: ["Bordeaux tastings", "Douro Valley"],
+          inclusions: [{ label: "All meals onboard" }],
+          embarkationPort: { name: "Bordeaux" },
+          disembarkationPort: { name: "Lisbon" },
+        },
+      },
+    ],
+    [],
+    [
+      {
+        id: "ccs_1",
+        externalId: "ss_joy",
+        name: "S.S. Joie de Vivre",
+        capacityGuests: 128,
+        deckCount: 4,
+        yearBuilt: 2017,
+        payload: { description: "Boutique river ship" },
+      },
+    ],
+    [
+      {
+        id: "cab_1",
+        externalId: "balcony",
+        code: "BAL",
+        name: "Balcony",
+        roomType: "balcony",
+        maxOccupancy: { adults: 2, total: 2 },
+        payload: { description: "Balcony cabin" },
+      },
+    ],
+  ]);
+  const client = createVoyantConnectClient({
+    apiKey: "k",
+    fetch: recorder.fetch,
+  });
+  const adapter = createVoyantConnectSourceAdapter({
+    client,
+    operatorId: "op_1",
+  });
+
+  const result = await adapter.getContent(
+    { connection_id: "conn_1" },
+    {
+      entity_module: "cruises",
+      entity_id: "cruise:308_54-until-2026:en",
+      locale: "en",
+      market: "US",
+    },
+  );
+
+  assert.equal(
+    recorder.calls[0].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/cruises/308_54-until-2026?locale=en",
+  );
+  assert.equal(
+    recorder.calls[1].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/cruises?locale=en&limit=500",
+  );
+  assert.equal(result.content_schema_version, "cruises/v1");
+  assert.equal(result.source_ref, "308_54-until-2026");
+  assert.equal(
+    result.content.cruise.description,
+    "A wine-focused river cruise through France and Portugal.",
+  );
+  assert.equal(
+    result.content.cruise.hero_image_url,
+    "https://example.com/cruise.jpg",
+  );
+  assert.equal(result.content.cruise.embarkation_port, "Bordeaux");
+  assert.equal(result.content.ship.name, "S.S. Joie de Vivre");
+  assert.deepEqual(result.content.sailings, []);
+  assert.equal(result.content.cabin_categories[0].capacity_max, 2);
+  assert.deepEqual(result.content.itinerary_stops, []);
+  assert.equal(result.content.policies[0].kind, "supplier_notes");
 });
 
 test("connect adapter reserve forwards generic bookings with the source connection id", async () => {

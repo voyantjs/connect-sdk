@@ -54,6 +54,10 @@ const resolveAdapterContext = (input: {
 - `source_connection_id` is always populated from the Connect connection that
   produced the projection so quote, book, cancel, and status dispatch resolve
   the same registered connection.
+- `getContent()` returns normalized cruise content as `cruises/v1`. It resolves
+  flat Connect search-document ids back to the Connect cruise source ref and
+  returns `{ cruise, ship, sailings, cabin_categories, itinerary_stops,
+policies }` instead of a raw Connect row.
 - Catalog route wiring must pass the quote or sourced row
   `source_connection_id` into `SourceAdapterContext.connection_id`. The adapter
   rejects `"engine"` contexts for booking dispatch because Connect cannot route

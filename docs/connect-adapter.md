@@ -77,6 +77,23 @@ stable provenance plus field-policy-aligned keys such as `name`, `source.kind`,
 quote, reserve, cancel, and status calls route back to the same registered
 connection that produced the projection.
 
+Rich content reads go through `SourceAdapter.getContent`. For cruises, the
+default adapter resolves Connect search-document ids such as
+`cruise:308_54-until-2026:en` back to the Connect cruise source ref, fetches the
+available related Connect cruise rows, and returns the Voyant cruises content
+shape with `content_schema_version: "cruises/v1"`:
+
+- `cruise`
+- `ship`
+- `sailings`
+- `cabin_categories`
+- `itinerary_stops`
+- `policies`
+
+When Connect has no sailings or prices for a cruise, those arrays remain empty
+while the durable cruise description, media, ship, and policy content still
+flows through the catalog content plane.
+
 Live resolution uses Connect's fresher routes instead of relying only on stale
 search documents and returns price hints when Connect provides them:
 
