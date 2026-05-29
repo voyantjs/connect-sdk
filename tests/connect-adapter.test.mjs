@@ -320,12 +320,12 @@ test("connect adapter getContent returns normalized cruise content for flat sear
         disembarkationPortCode: "LIS",
         locale: "en",
         updatedAt: "2026-05-29T18:30:00.000Z",
+        media: [{ url: "https://example.com/cruise.jpg" }],
         payload: {
           description:
             "A wine-focused river cruise through France and Portugal.",
           highlights: ["Bordeaux tastings", "Douro Valley"],
           inclusions: [{ label: "All meals onboard" }],
-          media: [{ url: "https://example.com/cruise.jpg" }],
           embarkationPort: { name: "Bordeaux" },
           disembarkationPort: { name: "Lisbon" },
         },
@@ -343,7 +343,17 @@ test("connect adapter getContent returns normalized cruise content for flat sear
         payload: { description: "Boutique river ship" },
       },
     ],
-    [],
+    [
+      {
+        id: "cab_1",
+        externalId: "balcony",
+        code: "BAL",
+        name: "Balcony",
+        roomType: "balcony",
+        maxOccupancy: { adults: 2, total: 2 },
+        payload: { description: "Balcony cabin" },
+      },
+    ],
   ]);
   const client = createVoyantConnectClient({
     apiKey: "k",
@@ -385,7 +395,7 @@ test("connect adapter getContent returns normalized cruise content for flat sear
   assert.equal(result.content.cruise.embarkation_port, "Bordeaux");
   assert.equal(result.content.ship.name, "S.S. Joie de Vivre");
   assert.deepEqual(result.content.sailings, []);
-  assert.deepEqual(result.content.cabin_categories, []);
+  assert.equal(result.content.cabin_categories[0].capacity_max, 2);
   assert.deepEqual(result.content.itinerary_stops, []);
   assert.equal(result.content.policies[0].kind, "supplier_notes");
 });

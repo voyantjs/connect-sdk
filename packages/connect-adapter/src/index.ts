@@ -944,6 +944,8 @@ function toCruiseContentCabinCategory(category: JsonRecord): JsonRecord | null {
     capacity_max:
       getNumber(category, "maxTotal") ??
       getNumber(payload, "maxTotal") ??
+      getNumber(getRecord(category, "maxOccupancy"), "total") ??
+      getNumber(getRecord(payload, "maxOccupancy"), "total") ??
       getNumber(payload, "maxOccupancy"),
     inclusions:
       getStringArray(category, "features") ??
@@ -1220,7 +1222,10 @@ function getCruiseHeroImageUrl(cruise: JsonRecord): string | undefined {
     getString(payload, "heroImageUrl") ??
     getString(payload, "imageUrl");
   if (direct) return direct;
-  for (const item of getRecordArray(payload, "media")) {
+  for (const item of [
+    ...getRecordArray(cruise, "media"),
+    ...getRecordArray(payload, "media"),
+  ]) {
     const url = getString(item, "url");
     if (url) return url;
   }
