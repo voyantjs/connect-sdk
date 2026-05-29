@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { VoyantApiError, VoyantTransport } from "../packages/sdk-core/dist/index.js";
+import {
+  VoyantApiError,
+  VoyantTransport,
+} from "../packages/sdk-core/dist/index.js";
 
 test("VoyantTransport serializes auth, query params, and JSON bodies", async () => {
   let requestUrl;
@@ -60,6 +63,40 @@ test("VoyantTransport can return the raw response envelope", async () => {
   });
 
   assert.deepEqual(result, { data: { ok: true }, meta: { page: 1 } });
+});
+
+test("VoyantTransport default fetch preserves the global receiver", async () => {
+  const originalFetch = globalThis.fetch;
+  let requestUrl;
+  let sawGlobalReceiver = false;
+
+  try {
+    globalThis.fetch = async function receiverSensitiveFetch(url) {
+      sawGlobalReceiver = this === globalThis;
+      requestUrl = String(url);
+
+      if (!sawGlobalReceiver) {
+        throw new TypeError("Illegal invocation");
+      }
+
+      return new Response(JSON.stringify({ data: { ok: true } }), {
+        headers: { "content-type": "application/json" },
+        status: 200,
+      });
+    };
+
+    const transport = new VoyantTransport({
+      apiKey: "test_key",
+    });
+
+    const result = await transport.request("/v1/example");
+
+    assert.deepEqual(result, { ok: true });
+    assert.equal(sawGlobalReceiver, true);
+    assert.equal(requestUrl, "https://api.voyantjs.com/v1/example");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("VoyantTransport throws VoyantApiError for non-2xx responses", async () => {

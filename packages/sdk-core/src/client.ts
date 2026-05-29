@@ -1,5 +1,9 @@
 import { VoyantApiError } from "./errors.js";
-import type { QueryParams, VoyantRequestOptions, VoyantTransportOptions } from "./types.js";
+import type {
+  QueryParams,
+  VoyantRequestOptions,
+  VoyantTransportOptions,
+} from "./types.js";
 
 const DEFAULT_BASE_URL = "https://api.voyantjs.com";
 
@@ -27,6 +31,9 @@ function appendQuery(url: URL, query: QueryParams | undefined) {
 function normalizePath(path: string) {
   return path.startsWith("/") ? path : `/${path}`;
 }
+
+const defaultFetch: typeof fetch = (input, init) =>
+  globalThis.fetch(input, init);
 
 function isBodyInit(value: VoyantRequestOptions["body"]): value is BodyInit {
   return (
@@ -91,14 +98,18 @@ export class VoyantTransport {
     this.apiKey = options.apiKey;
     this.baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
     this.defaultHeaders = options.headers;
-    this.fetchImpl = options.fetch ?? fetch;
+    this.fetchImpl = options.fetch ?? defaultFetch;
     this.authHeader = options.authHeader ?? "authorization";
-    this.authScheme = options.authScheme === undefined ? "Bearer" : options.authScheme;
+    this.authScheme =
+      options.authScheme === undefined ? "Bearer" : options.authScheme;
     this.userAgent = options.userAgent ?? "voyant-sdk";
   }
 
   private buildRequest(path: string, options: VoyantRequestOptions = {}) {
-    const url = new URL(normalizePath(path), this.baseUrl.endsWith("/") ? this.baseUrl : `${this.baseUrl}/`);
+    const url = new URL(
+      normalizePath(path),
+      this.baseUrl.endsWith("/") ? this.baseUrl : `${this.baseUrl}/`,
+    );
     appendQuery(url, options.query);
 
     const headers = new Headers(this.defaultHeaders);
@@ -157,7 +168,10 @@ export class VoyantTransport {
 
     if (!response.ok) {
       throw new VoyantApiError(
-        getErrorMessage(parsed, `Request failed with status ${response.status}`),
+        getErrorMessage(
+          parsed,
+          `Request failed with status ${response.status}`,
+        ),
         {
           body: parsed,
           requestId: response.headers.get("x-request-id"),
