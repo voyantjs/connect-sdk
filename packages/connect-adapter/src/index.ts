@@ -250,16 +250,31 @@ export function createVoyantConnectSourceAdapter(
 
     async listReservations(ctx, query) {
       const connectionId = requireConnectConnectionId(ctx);
-      const rows = await client.bookings.list(connectionId, {
-        localDateStart: query.updated_after?.toISOString(),
-      });
+      const rows = await client.bookings.list(connectionId);
+      const wantedStatuses = new Set(query.status ?? []);
+      const updatedAfter = query.updated_after?.getTime();
+      const limit =
+        typeof query.limit === "number" && query.limit > 0
+          ? query.limit
+          : undefined;
+      const reservations = rows
+        .map((row) => toReservationResult(row))
+        .filter((reservation) => {
+          if (
+            wantedStatuses.size > 0 &&
+            !wantedStatuses.has(reservation.status)
+          ) {
+            return false;
+          }
+          if (updatedAfter === undefined) return true;
+          const sourceUpdatedAt = reservation.source_updated_at?.getTime();
+          return (
+            sourceUpdatedAt === undefined || sourceUpdatedAt > updatedAfter
+          );
+        });
       return {
-        reservations: rows.map((row) => ({
-          upstream_ref: `booking:${getString(row, "id") ?? getString(row, "externalBookingId") ?? ""}`,
-          status: reservationStatusFromConnect(getString(row, "status")),
-          source_updated_at: dateFromString(getString(row, "updatedAt")),
-          upstream_payload: row,
-        })),
+        reservations:
+          limit === undefined ? reservations : reservations.slice(0, limit),
         next_cursor: undefined,
       };
     },
@@ -845,6 +860,15 @@ function connectBookingStatusToReserveStatus(
   if (value === "confirmed" || value === "completed") return "confirmed";
   if (value === "failed") return "failed";
   return "held";
+}
+
+function toReservationResult(row: JsonRecord) {
+  return {
+    upstream_ref: `booking:${getString(row, "id") ?? getString(row, "externalBookingId") ?? ""}`,
+    status: reservationStatusFromConnect(getString(row, "status")),
+    source_updated_at: dateFromString(getString(row, "updatedAt")),
+    upstream_payload: row,
+  };
 }
 
 function reservationStatusFromConnect(

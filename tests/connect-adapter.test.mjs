@@ -322,6 +322,59 @@ test("connect adapter rejects engine context for booking dispatch", async () => 
   );
 });
 
+test("connect adapter listReservations filters by updated time, status, and limit", async () => {
+  const recorder = createRecorder([
+    [
+      {
+        id: "book_old",
+        status: "confirmed",
+        updatedAt: "2026-05-29T10:00:00.000Z",
+      },
+      {
+        id: "book_pending",
+        status: "pending",
+        updatedAt: "2026-05-29T12:30:00.000Z",
+      },
+      {
+        id: "book_new",
+        status: "confirmed",
+        updatedAt: "2026-05-29T13:00:00.000Z",
+      },
+      {
+        id: "book_newer",
+        status: "confirmed",
+        updatedAt: "2026-05-29T14:00:00.000Z",
+      },
+    ],
+  ]);
+  const client = createVoyantConnectClient({
+    apiKey: "k",
+    fetch: recorder.fetch,
+  });
+  const adapter = createVoyantConnectSourceAdapter({
+    client,
+    operatorId: "op_1",
+  });
+
+  const result = await adapter.listReservations(
+    { connection_id: "conn_1" },
+    {
+      updated_after: new Date("2026-05-29T12:00:00.000Z"),
+      status: ["confirmed"],
+      limit: 1,
+    },
+  );
+
+  assert.equal(
+    recorder.calls[0].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/bookings",
+  );
+  assert.deepEqual(
+    result.reservations.map((reservation) => reservation.upstream_ref),
+    ["booking:book_new"],
+  );
+});
+
 test("resolveVoyantConnectAdapterContext builds catalog route contexts from provenance", () => {
   assert.deepEqual(
     resolveVoyantConnectAdapterContext({
