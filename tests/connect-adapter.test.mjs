@@ -5,6 +5,7 @@ import { createVoyantConnectClient } from "../packages/connect-sdk/dist/index.js
 import {
   createVoyantConnectSourceAdapter,
   mapSearchDocumentToProjection,
+  resolveVoyantConnectAdapterContext,
 } from "../packages/connect-adapter/dist/index.js";
 
 function createRecorder(responses) {
@@ -87,6 +88,14 @@ test("connect adapter maps Connect search documents to catalog projections with 
     last_sourced_at: new Date(updatedAt),
   });
   assert.equal(page.projections[0].entity_module, "products");
+  assert.equal(page.projections[0].fields.name, "Danube tour");
+  assert.equal(page.projections[0].fields["source.kind"], "voyant-connect");
+  assert.equal(page.projections[0].fields["source.ref"], "prod_1:opt_1");
+  assert.equal(page.projections[0].fields["seller.operator_id"], "op_1");
+  assert.equal(
+    page.projections[0].fields.thumbnailUrl,
+    "https://example.com/tour.jpg",
+  );
   assert.equal(page.projections[0].fields.title, "Danube tour");
 });
 
@@ -184,6 +193,61 @@ test("connect adapter liveResolve uses fresh stay search when requested", async 
   });
 });
 
+test("connect adapter generic liveResolve includes price hints from availability", async () => {
+  const recorder = createRecorder([
+    [
+      {
+        id: "slot_1",
+        available: true,
+        priceFrom: {
+          amountMinor: 12500,
+          currency: "EUR",
+          currencyPrecision: 2,
+        },
+      },
+      {
+        id: "slot_2",
+        available: true,
+        priceFrom: { amountMinor: 9900, currency: "EUR", currencyPrecision: 2 },
+      },
+    ],
+  ]);
+  const client = createVoyantConnectClient({
+    apiKey: "k",
+    fetch: recorder.fetch,
+  });
+  const adapter = createVoyantConnectSourceAdapter({
+    client,
+    operatorId: "op_1",
+  });
+
+  const result = await adapter.liveResolve(
+    { connection_id: "conn_1" },
+    {
+      ids: ["prod_1"],
+      scope: {
+        locale: "en",
+        audience: "public",
+        market: "RO",
+        currency: "EUR",
+      },
+      parameters: {
+        localDateStart: "2026-06-01",
+        localDateEnd: "2026-06-03",
+      },
+    },
+  );
+
+  assert.equal(result.values.prod_1.available, true);
+  assert.deepEqual(result.values.prod_1.price, {
+    amountMinor: 9900,
+    currency: "EUR",
+    currencyPrecision: 2,
+  });
+  assert.equal(result.values.prod_1.lowestPriceCached, "99.00");
+  assert.equal(result.values.prod_1.lowestPriceCachedCurrency, "EUR");
+});
+
 test("connect adapter reserve forwards generic bookings with the source connection id", async () => {
   const recorder = createRecorder([
     {
@@ -232,4 +296,51 @@ test("connect adapter reserve forwards generic bookings with the source connecti
     status: "held",
     upstream_payload: { id: "book_1", status: "reserved" },
   });
+});
+
+test("connect adapter rejects engine context for booking dispatch", async () => {
+  const client = createVoyantConnectClient({
+    apiKey: "k",
+    fetch: async () => new Response("{}"),
+  });
+  const adapter = createVoyantConnectSourceAdapter({
+    client,
+    operatorId: "op_1",
+  });
+
+  await assert.rejects(
+    () =>
+      adapter.reserve(
+        { connection_id: "engine" },
+        {
+          entity_module: "products",
+          entity_id: "prod_1",
+          parameters: { unitItems: [] },
+        },
+      ),
+    /source_connection_id/,
+  );
+});
+
+test("resolveVoyantConnectAdapterContext builds catalog route contexts from provenance", () => {
+  assert.deepEqual(
+    resolveVoyantConnectAdapterContext({
+      sourceKind: "voyant-connect",
+      sourceConnectionId: "conn_1",
+      correlationId: "req_1",
+    }),
+    {
+      connection_id: "conn_1",
+      correlation_id: "req_1",
+    },
+  );
+
+  assert.throws(
+    () =>
+      resolveVoyantConnectAdapterContext({
+        sourceKind: "engine",
+        fallbackConnectionId: "engine",
+      }),
+    /source_connection_id/,
+  );
 });

@@ -11,209 +11,48 @@ import {
   type VoyantConnectClient,
   type VoyantConnectClientOptions,
 } from "@voyantjs/connect-sdk";
+import type {
+  AdapterCapabilities,
+  CancelRequest,
+  CancelResult,
+  CatalogProjection,
+  GetContentRequest,
+  GetContentResult,
+  LiveResolveRequest,
+  LiveResolveResult,
+  ReservationStatus,
+  ReserveRequest,
+  ReserveResult,
+  SourceAdapter,
+  SourceAdapterContext,
+} from "@voyantjs/catalog/adapter/contract";
 
 type JsonRecord = Record<string, unknown>;
 
-export interface AdapterCapabilities {
-  verticals: string[];
-  supportsLiveResolution: boolean;
-  supportsDriftDetection: boolean;
-  supportsBookingForwarding: boolean;
-  supportsReservationRetrieval?: boolean;
-  supportsSyncCancellation?: boolean;
-  postBookOperations: ReadonlyArray<
-    "modify" | "cancel" | "status" | "refund" | "exchange" | "void"
-  >;
-  cacheTtlSeconds?: number | null;
-  supportsContentFetch?: boolean;
-  supportedContentLocales?: ReadonlyArray<string>;
-  ownsContentCache?: boolean;
-  ownsAvailabilityCache?: boolean;
-  holdReleaseGraceMs?: number;
-}
-
-export type ConnectionState = "active" | "paused" | "disconnected" | "error";
-
-export interface SourceAdapterContext {
-  connection_id: string;
-  credentials?: Record<string, string>;
-  tenant_id?: string;
-  correlation_id?: string;
-}
-
-export type SourceFreshness = "sync" | "event" | "request" | "static" | null;
-
-export interface Provenance {
-  source_kind: string;
-  source_provider?: string;
-  source_connection_id?: string;
-  source_ref?: string;
-  source_freshness: SourceFreshness;
-  last_sourced_at?: Date;
-}
-
-export interface CatalogProjection {
-  entity_module: string;
-  entity_id: string;
-  provenance: Provenance;
-  fields: JsonRecord;
-}
-
-export type DiscoveryCursor = string | undefined;
-
-export interface DiscoveryPage {
-  projections: CatalogProjection[];
-  next_cursor: DiscoveryCursor;
-}
-
-export interface SourceAdapterRequestScope {
-  locale: string;
-  audience: string;
-  market: string;
-  currency?: string;
-}
-
-export interface LiveResolveRequest {
-  ids: string[];
-  scope: SourceAdapterRequestScope;
-  parameters?: JsonRecord;
-}
-
-export interface LiveResolveResult {
-  values: Record<string, JsonRecord>;
-  failed?: Record<
-    string,
-    | "timeout"
-    | "not_found"
-    | "unavailable"
-    | "departure_not_found"
-    | "departure_unavailable"
-    | "unsupported"
-    | "error"
-  >;
-}
-
-export interface GetContentRequest {
-  entity_module: string;
-  entity_id: string;
-  locale: string;
-  market?: string;
-  currency?: string;
-}
-
-export interface GetContentResult {
-  entity_module: string;
-  entity_id: string;
-  source_ref: string;
-  returned_locale: string;
-  machine_translated?: boolean;
-  content: unknown;
-  content_schema_version: string;
-  source_updated_at?: Date;
-  fresh_until?: Date;
-  etag?: string;
-}
-
-export interface ReserveRequest {
-  entity_module: string;
-  entity_id: string;
-  parameters: JsonRecord;
-  party?: JsonRecord;
-  payment_intent?: JsonRecord;
-  scope?: SourceAdapterRequestScope;
-  idempotency_key?: string;
-}
-
-export interface ReserveResult {
-  upstream_ref: string;
-  status: "held" | "confirmed" | "ticketed" | "failed";
-  upstream_payload?: JsonRecord;
-}
-
-export interface CancelRequest {
-  upstream_ref: string;
-  reason?: string;
-  scope?: SourceAdapterRequestScope;
-  idempotency_key?: string;
-}
-
-export interface CancelResult {
-  status: "cancelled" | "pending" | "refused" | "failed";
-  refund_amount?: number;
-  refund_currency?: string;
-  pending_channel?: string;
-}
-
-export type ReservationStatus =
-  | ReserveResult["status"]
-  | CancelResult["status"]
-  | "cancelling";
-
-export interface GetReservationRequest {
-  upstream_ref: string;
-  scope?: SourceAdapterRequestScope;
-}
-
-export interface GetReservationResult {
-  upstream_ref: string;
-  status: ReservationStatus;
-  source_updated_at?: Date;
-  upstream_payload?: JsonRecord;
-}
-
-export interface ListReservationsQuery {
-  cursor?: DiscoveryCursor;
-  limit?: number;
-  status?: ReadonlyArray<ReservationStatus>;
-  updated_after?: Date;
-  scope?: SourceAdapterRequestScope;
-}
-
-export interface ListReservationsPage {
-  reservations: GetReservationResult[];
-  next_cursor: DiscoveryCursor;
-}
-
-export interface SourceAdapter {
-  readonly kind: string;
-  readonly capabilities: AdapterCapabilities;
-  connect?(ctx: SourceAdapterContext): Promise<void>;
-  pause?(ctx: SourceAdapterContext): Promise<void>;
-  disconnect?(ctx: SourceAdapterContext): Promise<void>;
-  getState?(ctx: SourceAdapterContext): Promise<ConnectionState>;
-  discover?(
-    ctx: SourceAdapterContext,
-    cursor?: DiscoveryCursor,
-  ): Promise<DiscoveryPage>;
-  freshnessCheck?(
-    ctx: SourceAdapterContext,
-    entity_id: string,
-  ): Promise<{ etag: string; updated_at: Date } | undefined>;
-  liveResolve?(
-    ctx: SourceAdapterContext,
-    request: LiveResolveRequest,
-  ): Promise<LiveResolveResult>;
-  getContent?(
-    ctx: SourceAdapterContext,
-    request: GetContentRequest,
-  ): Promise<GetContentResult>;
-  reserve?(
-    ctx: SourceAdapterContext,
-    request: ReserveRequest,
-  ): Promise<ReserveResult>;
-  cancel?(
-    ctx: SourceAdapterContext,
-    request: CancelRequest,
-  ): Promise<CancelResult>;
-  getReservation?(
-    ctx: SourceAdapterContext,
-    request: GetReservationRequest,
-  ): Promise<GetReservationResult | null>;
-  listReservations?(
-    ctx: SourceAdapterContext,
-    query: ListReservationsQuery,
-  ): Promise<ListReservationsPage>;
-}
+export type {
+  AdapterCapabilities,
+  CancelRequest,
+  CancelResult,
+  CatalogProjection,
+  ConnectionState,
+  DiscoveryCursor,
+  DiscoveryPage,
+  GetContentRequest,
+  GetContentResult,
+  GetReservationRequest,
+  GetReservationResult,
+  ListReservationsPage,
+  ListReservationsQuery,
+  LiveResolveRequest,
+  LiveResolveResult,
+  ReservationStatus,
+  ReserveRequest,
+  ReserveResult,
+  SourceAdapter,
+  SourceAdapterContext,
+  SourceAdapterRequestScope,
+} from "@voyantjs/catalog/adapter/contract";
+export type { Provenance } from "@voyantjs/catalog/provenance";
 
 export interface VoyantConnectSourceAdapterOptions {
   client?: VoyantConnectClient;
@@ -255,6 +94,38 @@ export interface ProjectionDefaults {
   sourceKind: string;
   sourceProvider?: string;
   connectionId: string;
+  operatorId?: string;
+}
+
+export interface VoyantConnectAdapterContextInput {
+  sourceConnectionId?: string | null;
+  sourceKind?: string | null;
+  fallbackConnectionId?: string | null;
+  credentials?: Record<string, string>;
+  tenantId?: string;
+  correlationId?: string;
+}
+
+export function resolveVoyantConnectAdapterContext(
+  input: VoyantConnectAdapterContextInput,
+): SourceAdapterContext {
+  const connectionId = input.sourceConnectionId ?? input.fallbackConnectionId;
+  if (!connectionId || connectionId === "engine") {
+    throw new Error(
+      "Voyant Connect adapter context requires the quote or sourced row source_connection_id. Configure catalog resolveAdapterContext to pass provenance.sourceConnectionId for book/cancel/status calls.",
+    );
+  }
+  if (input.sourceKind && input.sourceKind !== "voyant-connect") {
+    throw new Error(
+      `Voyant Connect adapter cannot handle source kind ${input.sourceKind}`,
+    );
+  }
+  return {
+    connection_id: connectionId,
+    ...(input.credentials ? { credentials: input.credentials } : {}),
+    ...(input.tenantId ? { tenant_id: input.tenantId } : {}),
+    ...(input.correlationId ? { correlation_id: input.correlationId } : {}),
+  };
 }
 
 export function createVoyantConnectSourceAdapter(
@@ -281,9 +152,10 @@ export function createVoyantConnectSourceAdapter(
     },
 
     async getState(ctx) {
+      const connectionId = requireConnectConnectionId(ctx);
       const connection = await client.connections.get(
         resolveOperatorId(options),
-        ctx.connection_id,
+        connectionId,
       );
       if (connection.status === "paused") return "paused";
       if (connection.status === "errored") return "error";
@@ -292,7 +164,7 @@ export function createVoyantConnectSourceAdapter(
     },
 
     async discover(ctx, cursor) {
-      const connectionId = ctx.connection_id;
+      const connectionId = requireConnectConnectionId(ctx);
       const connectionIds = options.connectionIds ?? [connectionId];
       const documentPages = await Promise.all(
         connectionIds.map((id) =>
@@ -309,6 +181,7 @@ export function createVoyantConnectSourceAdapter(
         sourceKind,
         sourceProvider: options.sourceProvider,
         connectionId,
+        operatorId: resolveOperatorId(options),
       } satisfies ProjectionDefaults;
       return {
         projections: documents
@@ -327,10 +200,11 @@ export function createVoyantConnectSourceAdapter(
     },
 
     async freshnessCheck(ctx, entityId) {
+      const connectionId = requireConnectConnectionId(ctx);
       const documents = await client.operators.listSearchDocuments(
         resolveOperatorId(options),
         {
-          connectionId: ctx.connection_id,
+          connectionId,
           limit: 1,
         },
       );
@@ -362,8 +236,9 @@ export function createVoyantConnectSourceAdapter(
     },
 
     async getReservation(ctx, request) {
+      const connectionId = requireConnectConnectionId(ctx);
       const ref = parseUpstreamRef(request.upstream_ref);
-      const booking = await getBookingByRef(client, ctx.connection_id, ref);
+      const booking = await getBookingByRef(client, connectionId, ref);
       if (!booking) return null;
       return {
         upstream_ref: request.upstream_ref,
@@ -374,7 +249,8 @@ export function createVoyantConnectSourceAdapter(
     },
 
     async listReservations(ctx, query) {
-      const rows = await client.bookings.list(ctx.connection_id, {
+      const connectionId = requireConnectConnectionId(ctx);
+      const rows = await client.bookings.list(connectionId, {
         localDateStart: query.updated_after?.toISOString(),
       });
       return {
@@ -387,7 +263,7 @@ export function createVoyantConnectSourceAdapter(
         next_cursor: undefined,
       };
     },
-  };
+  } satisfies SourceAdapter;
 }
 
 export function mapSearchDocumentToProjection(
@@ -411,6 +287,9 @@ export function mapSearchDocumentToProjection(
   const sourceProvider =
     defaults.sourceProvider ?? getString(source, "providerKey");
   const refreshedAt = getString(freshness, "refreshedAt") ?? document.updatedAt;
+  const sourceRef = getSourceRef(payload, entityId);
+  const imageUrl = getString(payload, "imageUrl") ?? null;
+  const priceFrom = getRecordOrNull(payload, "priceFrom");
 
   return {
     entity_module: categoryToEntityModule(getString(payload, "category")),
@@ -419,19 +298,52 @@ export function mapSearchDocumentToProjection(
       source_kind: defaults.sourceKind,
       ...(sourceProvider ? { source_provider: sourceProvider } : {}),
       source_connection_id: sourceConnectionId,
-      source_ref: getSourceRef(payload, entityId),
+      source_ref: sourceRef,
       source_freshness: "sync",
       ...(refreshedAt ? { last_sourced_at: new Date(refreshedAt) } : {}),
     },
     fields: {
+      id: entityId,
+      "source.kind": defaults.sourceKind,
+      "source.ref": sourceRef,
+      "source.connection_id": sourceConnectionId,
+      "seller.operator_id": defaults.operatorId ?? document.operatorId,
+      supplierId: getString(payload, "supplierId") ?? null,
+      productId: getString(payload, "productId") ?? entityId,
+      optionId: getString(payload, "optionId") ?? null,
+      category: getString(payload, "category") ?? null,
+      active: true,
+      status: availabilityStatusToCatalogStatus(
+        getString(payload, "availabilityStatus"),
+      ),
+      name:
+        getString(payload, "name") ?? getString(payload, "title") ?? entityId,
       title: getString(payload, "title") ?? entityId,
       summary: getString(payload, "summary") ?? null,
+      description:
+        getString(payload, "description") ??
+        getString(payload, "summary") ??
+        null,
+      shortDescription:
+        getString(payload, "shortDescription") ??
+        getString(payload, "summary") ??
+        null,
+      thumbnailUrl: imageUrl,
+      heroImageUrl: imageUrl,
       searchable_text: getString(payload, "searchableText") ?? "",
       destinations: getStringArray(payload, "destinations"),
       country_codes: getStringArray(payload, "countryCodes"),
+      countryCodes: getStringArray(payload, "countryCodes"),
       tags: getStringArray(payload, "tags"),
       image_url: getString(payload, "imageUrl") ?? null,
-      price_from: payload.priceFrom ?? null,
+      price_from: priceFrom,
+      lowestPriceCached: moneyToDecimalString(priceFrom),
+      lowestPriceCachedCurrency: getString(priceFrom ?? {}, "currency") ?? null,
+      cruiseType: normalizeCruiseType(getString(payload, "cruiseType")),
+      nights: getNumber(payload, "nights"),
+      embarkationPortCode: getString(payload, "embarkationPortCode") ?? null,
+      disembarkationPortCode:
+        getString(payload, "disembarkationPortCode") ?? null,
       availability_status: getString(payload, "availabilityStatus") ?? null,
       market_context: payload.marketContext ?? document.market ?? null,
       connect_document: payload,
@@ -482,6 +394,15 @@ function resolveOperatorId(options: VoyantConnectSourceAdapterOptions): string {
   return operatorId;
 }
 
+function requireConnectConnectionId(ctx: SourceAdapterContext): string {
+  if (!ctx.connection_id || ctx.connection_id === "engine") {
+    throw new Error(
+      "Voyant Connect adapter calls require SourceAdapterContext.connection_id to be the Connect source_connection_id.",
+    );
+  }
+  return ctx.connection_id;
+}
+
 function withProjectionDefaults(
   projection: CatalogProjection,
   document: SearchDocument,
@@ -511,13 +432,14 @@ async function liveResolveFromConnect(
   ctx: SourceAdapterContext,
   request: LiveResolveRequest,
 ): Promise<LiveResolveResult> {
+  const connectionId = requireConnectConnectionId(ctx);
   if (request.parameters?.connectRoute === "stays") {
-    return liveResolveStays(client, ctx.connection_id, request);
+    return liveResolveStays(client, connectionId, request);
   }
   if (request.parameters?.connectRoute === "cruises") {
-    return liveResolveCruises(client, ctx.connection_id, request);
+    return liveResolveCruises(client, connectionId, request);
   }
-  return liveResolveAvailability(client, ctx.connection_id, request);
+  return liveResolveAvailability(client, connectionId, request);
 }
 
 async function liveResolveAvailability(
@@ -539,6 +461,11 @@ async function liveResolveAvailability(
         values[id] = {
           available: slots.some((slot) => getBoolean(slot, "available")),
           availability: slots,
+          price: lowestSlotPrice(slots),
+          price_from: lowestSlotPrice(slots),
+          lowestPriceCached: moneyToDecimalString(lowestSlotPrice(slots)),
+          lowestPriceCachedCurrency:
+            getString(lowestSlotPrice(slots) ?? {}, "currency") ?? null,
           refreshed_at: new Date().toISOString(),
         };
       } catch {
@@ -624,11 +551,12 @@ async function getContentFromConnect(
   ctx: SourceAdapterContext,
   request: GetContentRequest,
 ): Promise<GetContentResult> {
+  const connectionId = requireConnectConnectionId(ctx);
   const module = request.entity_module;
   let content: unknown;
   if (module.includes("cruise")) {
     const row = await client.cruises.getOnConnection(
-      ctx.connection_id,
+      connectionId,
       request.entity_id,
       {
         locale: request.locale,
@@ -637,7 +565,7 @@ async function getContentFromConnect(
     content = row;
   } else if (module.includes("accommodation") || module.includes("stay")) {
     const row = await client.accommodations.getOnConnection(
-      ctx.connection_id,
+      connectionId,
       request.entity_id,
       {
         locale: request.locale,
@@ -646,7 +574,7 @@ async function getContentFromConnect(
     content = row;
   } else {
     const row = await client.products.getOnConnection(
-      ctx.connection_id,
+      connectionId,
       request.entity_id,
     );
     content = row;
@@ -667,9 +595,10 @@ async function reserveThroughConnect(
   ctx: SourceAdapterContext,
   request: ReserveRequest,
 ): Promise<ReserveResult> {
+  const connectionId = requireConnectConnectionId(ctx);
   if (request.parameters.connectRoute === "stays") {
     const booking = await client.stays.confirm(
-      ctx.connection_id,
+      connectionId,
       request.parameters as unknown as StayConfirmInput,
       { idempotencyKey: request.idempotency_key },
     );
@@ -685,12 +614,12 @@ async function reserveThroughConnect(
       getString(request.parameters, "quoteId") ??
       (
         await client.cruiseBookings.lockSelection(
-          ctx.connection_id,
+          connectionId,
           request.parameters as unknown as CruiseLockSelectionInput,
         )
       ).id;
     const booking = await client.cruiseBookings.confirm(
-      ctx.connection_id,
+      connectionId,
       {
         ...request.parameters,
         quoteId,
@@ -705,7 +634,7 @@ async function reserveThroughConnect(
   }
 
   const booking = await client.bookings.create(
-    ctx.connection_id,
+    connectionId,
     {
       ...request.parameters,
       productId:
@@ -721,7 +650,7 @@ async function reserveThroughConnect(
   const shouldConfirm =
     request.payment_intent !== undefined || request.parameters.confirm === true;
   const confirmed = shouldConfirm
-    ? await client.bookings.confirm(ctx.connection_id, bookingId)
+    ? await client.bookings.confirm(connectionId, bookingId)
     : booking;
   return {
     upstream_ref: `booking:${bookingId}`,
@@ -735,29 +664,22 @@ async function cancelThroughConnect(
   ctx: SourceAdapterContext,
   request: CancelRequest,
 ): Promise<CancelResult> {
+  const connectionId = requireConnectConnectionId(ctx);
   const ref = parseUpstreamRef(request.upstream_ref);
   const reason = request.reason ? { reason: request.reason } : undefined;
   if (ref.kind === "stay") {
-    const booking = await client.stays.cancel(
-      ctx.connection_id,
-      ref.id,
-      reason,
-    );
+    const booking = await client.stays.cancel(connectionId, ref.id, reason);
     return { status: booking.status === "cancelled" ? "cancelled" : "pending" };
   }
   if (ref.kind === "cruise") {
     const booking = await client.cruiseBookings.cancel(
-      ctx.connection_id,
+      connectionId,
       ref.id,
       reason,
     );
     return { status: booking.status === "cancelled" ? "cancelled" : "pending" };
   }
-  const booking = await client.bookings.cancel(
-    ctx.connection_id,
-    ref.id,
-    reason,
-  );
+  const booking = await client.bookings.cancel(connectionId, ref.id, reason);
   return {
     status:
       getString(booking, "status") === "cancelled" ? "cancelled" : "pending",
@@ -831,9 +753,21 @@ function getRecord(record: JsonRecord, key: string): JsonRecord {
     : {};
 }
 
+function getRecordOrNull(record: JsonRecord, key: string): JsonRecord | null {
+  const value = record[key];
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as JsonRecord)
+    : null;
+}
+
 function getString(record: JsonRecord, key: string): string | undefined {
   const value = record[key];
   return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function getNumber(record: JsonRecord, key: string): number | null {
+  const value = record[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 function getBoolean(record: JsonRecord, key: string): boolean {
@@ -851,6 +785,58 @@ function getStringArray(record: JsonRecord, key: string): string[] | undefined {
 
 function dateFromString(value: string | undefined): Date | undefined {
   return value ? new Date(value) : undefined;
+}
+
+function normalizeCruiseType(value: string | undefined): string | null {
+  if (
+    value === "ocean" ||
+    value === "river" ||
+    value === "expedition" ||
+    value === "coastal"
+  ) {
+    return value;
+  }
+  return value ? "ocean" : null;
+}
+
+function availabilityStatusToCatalogStatus(value: string | undefined): string {
+  if (value === "soldOut" || value === "closed") return "unavailable";
+  if (value === "onRequest") return "on_request";
+  return "active";
+}
+
+function lowestSlotPrice(slots: JsonRecord[]): JsonRecord | null {
+  let lowest: JsonRecord | null = null;
+  for (const slot of slots) {
+    const price = getRecordOrNull(slot, "priceFrom");
+    if (!price) continue;
+    if (!lowest || moneyAmountMinor(price) < moneyAmountMinor(lowest)) {
+      lowest = price;
+    }
+  }
+  return lowest;
+}
+
+function moneyAmountMinor(money: JsonRecord): number {
+  const value = money.amountMinor;
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : Number.POSITIVE_INFINITY;
+}
+
+function moneyToDecimalString(money: JsonRecord | null): string | null {
+  if (!money) return null;
+  const amountMinor = money.amountMinor;
+  const currencyPrecision = money.currencyPrecision;
+  if (
+    typeof amountMinor !== "number" ||
+    !Number.isFinite(amountMinor) ||
+    typeof currencyPrecision !== "number" ||
+    !Number.isInteger(currencyPrecision)
+  ) {
+    return null;
+  }
+  return (amountMinor / 10 ** currencyPrecision).toFixed(currencyPrecision);
 }
 
 function connectBookingStatusToReserveStatus(

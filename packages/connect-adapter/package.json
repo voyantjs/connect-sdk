@@ -39,15 +39,8 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@voyantjs/catalog": "*",
     "@voyantjs/connect-sdk": "workspace:*"
-  },
-  "peerDependencies": {
-    "@voyantjs/catalog": "*"
-  },
-  "peerDependenciesMeta": {
-    "@voyantjs/catalog": {
-      "optional": true
-    }
   },
   "devDependencies": {
     "@voyant-sdk/eslint-config": "workspace:*",

@@ -16,7 +16,10 @@ pnpm add @voyantjs/connect-adapter @voyantjs/connect-sdk @voyantjs/catalog
 
 ```ts
 import { createSourceAdapterRegistry } from "@voyantjs/catalog/booking-engine";
-import { createVoyantConnectSourceAdapter } from "@voyantjs/connect-adapter";
+import {
+  createVoyantConnectSourceAdapter,
+  resolveVoyantConnectAdapterContext,
+} from "@voyantjs/connect-adapter";
 
 const registry = createSourceAdapterRegistry();
 const adapter = createVoyantConnectSourceAdapter({
@@ -28,6 +31,18 @@ const adapter = createVoyantConnectSourceAdapter({
 });
 
 registry.register("conn_123", adapter);
+
+// In catalog booking routes, resolve adapter context from quote provenance:
+const resolveAdapterContext = (input: {
+  sourceKind?: string | null;
+  sourceConnectionId?: string | null;
+  correlationId?: string;
+}) =>
+  resolveVoyantConnectAdapterContext({
+    sourceKind: input.sourceKind,
+    sourceConnectionId: input.sourceConnectionId,
+    correlationId: input.correlationId,
+  });
 ```
 
 ## Notes
@@ -39,5 +54,9 @@ registry.register("conn_123", adapter);
 - `source_connection_id` is always populated from the Connect connection that
   produced the projection so quote, book, cancel, and status dispatch resolve
   the same registered connection.
+- Catalog route wiring must pass the quote or sourced row
+  `source_connection_id` into `SourceAdapterContext.connection_id`. The adapter
+  rejects `"engine"` contexts for booking dispatch because Connect cannot route
+  quote/book/cancel without the original connection id.
 
 For repo-level context, see [../../docs/connect-adapter.md](../../docs/connect-adapter.md).

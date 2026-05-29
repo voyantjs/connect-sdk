@@ -219,7 +219,10 @@ verifyPublicPackage("packages/connect-cruises/package.json", {
 verifyPublicPackage("packages/connect-adapter/package.json", {
   name: "@voyantjs/connect-adapter",
   descriptionKeyword: "catalog SourceAdapter",
-  dependencies: { "@voyantjs/connect-sdk": "workspace:*" },
+  dependencies: {
+    "@voyantjs/catalog": "*",
+    "@voyantjs/connect-sdk": "workspace:*",
+  },
 });
 verifyPrivatePackage("packages/sdk-core/package.json");
 

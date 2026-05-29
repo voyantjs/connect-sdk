@@ -13,32 +13,32 @@ Root groups:
 
 - `client.oauth.issueToken(input)`
 - `client.operators.{ list, get, create, update, deactivate, getUsage,
-  listSearchDocuments, listSearchProjectionChanges }`
+listSearchDocuments, listSearchProjectionChanges }`
 - `client.connectorProviders.{ list, update, listApplications,
-  listRegistrations, getRegistration, upsertRegistration, updateRegistration,
-  updateTuiSettings, revalidateRegistration }`
+listRegistrations, getRegistration, upsertRegistration, updateRegistration,
+updateTuiSettings, revalidateRegistration }`
 - `client.connections.{ list, get, create, update, delete, rotateWebhookSecret,
-  listProjectionSyncs, triggerProjectionSync, listWebhookEvents,
-  listHealthEvents, listRequestLogs }`
+listProjectionSyncs, triggerProjectionSync, listWebhookEvents,
+listHealthEvents, listRequestLogs }`
 - `client.links.{ list, get, create, update, updateCapability }`
 - `client.oauthClients.{ list, create, revoke }`
 - `client.grants.{ listForOperator, create, update, revoke, listReceived, get }`
 - `client.auditLogs.list(query)`
 - `client.inviteTokens.{ list, create, revoke, lookup, redeem }`
 - `client.webhookSubscriptions.{ list, create, update, delete, listDeliveries,
-  sendTestEvent, replayDelivery }`
+sendTestEvent, replayDelivery }`
 - `client.customConnectionRequests.{ list, create }`
 - `client.products.{ list, get, listOnConnection, getOnConnection,
-  listOptions, listExtras }`
+listOptions, listExtras }`
 - `client.options.{ listUnits, listExtraConfigs }`
 - `client.suppliers.{ list, listOnConnection }`
 - `client.availability.{ list, calendar }`
 - `client.bookings.{ listAll, list, get, create, confirm, cancel,
-  listActivities }`
+listActivities }`
 - `client.health.get`
 - `client.flights.{ search, searchStream, searchOnConnection, price, book,
-  getOrder, cancelOrder, ticketOrder, getSeatMap, selectSeats, getAncillaries,
-  addAncillary, checkIn, exchange, refund, voidOrder, addServiceRequest }`
+getOrder, cancelOrder, ticketOrder, getSeatMap, selectSeats, getAncillaries,
+addAncillary, checkIn, exchange, refund, voidOrder, addServiceRequest }`
 
 Selected public types:
 
@@ -99,13 +99,14 @@ Voyant-side catalog adapter factory:
 
 - `createVoyantConnectSourceAdapter(options)`
 - `mapSearchDocumentToProjection(document, defaults)`
+- `resolveVoyantConnectAdapterContext(input)`
 
 `createVoyantConnectSourceAdapter` returns an OSS-compatible `SourceAdapter`
-shape. Discovery reads Connect search documents and emits `CatalogProjection`
-values with `source_kind`, `source_provider`, `source_connection_id`,
-`source_ref`, and `source_freshness` populated. Live resolution uses Connect's
-live routes for availability, stays, and cruises when requested by
-`parameters.connectRoute`.
+typed against `@voyantjs/catalog/adapter/contract`. Discovery reads Connect
+search documents and emits `CatalogProjection` values with `source_kind`,
+`source_provider`, `source_connection_id`, `source_ref`, and
+`source_freshness` populated. Live resolution uses Connect's live routes for
+availability, stays, and cruises when requested by `parameters.connectRoute`.
 
 Selected public types:
 
