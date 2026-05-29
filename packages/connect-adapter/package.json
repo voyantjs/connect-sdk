@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/connect-adapter",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Voyant Connect catalog SourceAdapter for Voyant apps.",
   "license": "FSL-1.1-Apache-2.0",
   "repository": {
