@@ -1,5 +1,11 @@
 # @voyantjs/connect-adapter
 
+## 0.2.3
+
+### Patch Changes
+
+- b23180f: Publish `@voyantjs/catalog` as a peer dependency so host apps own the catalog package graph.
+
 ## 0.2.2
 
 ### Patch Changes
