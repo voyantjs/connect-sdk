@@ -42,12 +42,12 @@
     "@voyantjs/connect-sdk": "workspace:*"
   },
   "peerDependencies": {
-    "@voyantjs/catalog": ">=0.85.0 <1"
+    "@voyantjs/catalog": ">=0.85.3 <1"
   },
   "devDependencies": {
     "@voyant-sdk/eslint-config": "workspace:*",
     "@voyant-sdk/typescript-config": "workspace:*",
-    "@voyantjs/catalog": ">=0.85.0 <1",
+    "@voyantjs/catalog": "^0.85.3",
     "eslint": "^9.39.1",
     "typescript": "5.9.2"
   },

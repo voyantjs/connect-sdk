@@ -42,7 +42,7 @@
     "@voyantjs/connect-sdk": "workspace:*"
   },
   "peerDependencies": {
-    "@voyantjs/cruises": "*"
+    "@voyantjs/cruises": ">=0.85.3 <1"
   },
   "peerDependenciesMeta": {
     "@voyantjs/cruises": {
@@ -52,6 +52,7 @@
   "devDependencies": {
     "@voyant-sdk/eslint-config": "workspace:*",
     "@voyant-sdk/typescript-config": "workspace:*",
+    "@voyantjs/cruises": "^0.85.3",
     "eslint": "^9.39.1",
     "typescript": "5.9.2"
   },
