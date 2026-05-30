@@ -38,6 +38,7 @@
     "GET /connect/v1/connections/:connectionId/sailings",
     "GET /connect/v1/connections/:connectionId/sailings/:sailingExternalId/itinerary",
     "GET /connect/v1/connections/:connectionId/sailings/:sailingExternalId/pricing",
+    "GET /connect/v1/connections/:connectionId/sailings/:sailingExternalId/promotions",
     "GET /connect/v1/connections/:connectionId/sailings/:sailingId",
     "GET /connect/v1/connections/:connectionId/ships",
     "GET /connect/v1/connections/:connectionId/ships/:shipExternalId/cabin-categories",

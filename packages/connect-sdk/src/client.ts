@@ -14,6 +14,7 @@ import type {
   CruiseInquireInput,
   CruiseLockSelectionInput,
   CruiseOffer,
+  CruisePromotion,
   CruiseQuote,
   CruiseSearchQuery,
   CruiseSearchResponse,
@@ -21,6 +22,7 @@ import type {
   ListCruisesQuery,
   ListItineraryDay,
   ListSailingPricingQuery,
+  ListSailingPromotionsQuery,
   ListSailingsQuery,
   OperatorAccommodationDetail,
   OperatorAccommodationSummary,
@@ -1265,6 +1267,23 @@ export class VoyantConnectClient {
     ) =>
       this.transport.request<CabinPricing[]>(
         `/connect/v1/connections/${connectionId}/sailings/${sailingExternalId}/pricing`,
+        {
+          query: query as unknown as Record<
+            string,
+            string | number | undefined
+          >,
+          unwrapData: false,
+        },
+      ),
+
+    /** Promotions available for a sailing on a connection. */
+    listSailingPromotions: (
+      connectionId: string,
+      sailingExternalId: string,
+      query?: ListSailingPromotionsQuery,
+    ) =>
+      this.transport.request<CruisePromotion[]>(
+        `/connect/v1/connections/${connectionId}/sailings/${sailingExternalId}/promotions`,
         {
           query: query as unknown as Record<
             string,

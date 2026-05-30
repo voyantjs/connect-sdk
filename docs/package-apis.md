@@ -36,6 +36,7 @@ listOptions, listExtras }`
 - `client.bookings.{ listAll, list, get, create, confirm, cancel,
 listActivities }`
 - `client.health.get`
+- `client.cruises.{ listSailingPricing, listSailingPromotions }`
 - `client.flights.{ search, searchStream, searchOnConnection, price, book,
 getOrder, cancelOrder, ticketOrder, getSeatMap, selectSeats, getAncillaries,
 addAncillary, checkIn, exchange, refund, voidOrder, addServiceRequest }`
@@ -66,7 +67,8 @@ Selected public types:
 - `ConnectionScopeFilter`, `OperatorScope`
 - `OperatorProductSummary`, `OperatorProductDetail`,
   `OperatorSupplierSummary`, `OperatorBookingSummary`
-- `ConnectCruiseRow`, `OperatorCruiseSummary`
+- `ConnectCruiseRow`, `OperatorCruiseSummary`, `CruisePromotion`,
+  `CruisePromotionDiscount`, `CruisePromotionEligibility`
 - `ConnectChannelHealth`, `ConnectOptionSummary`, `ConnectUnitSummary`,
   `ConnectProductExtraSummary`, `ConnectOptionExtraConfigSummary`
 - `FlightMultiSearchInput`, `FlightSearchInput`, `FlightSearchResult`,

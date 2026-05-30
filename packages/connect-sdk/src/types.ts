@@ -1236,6 +1236,51 @@ export type CruiseFareComponentKind =
   | "single_supplement"
   | "other";
 
+export type CruisePromotionDiscountType = "percentage" | "fixed_amount";
+
+export type CruisePromotionDiscount =
+  | {
+      type: "percentage";
+      percent: number;
+    }
+  | {
+      type: "fixed_amount";
+      amount: ConnectMoney;
+    };
+
+export interface CruisePromotionEligibility {
+  onlyAvailableToPastGuests?: boolean;
+  soloTravelerOffer?: boolean;
+  featuredOffer?: boolean;
+  hideFromPrice?: boolean;
+  hideOfferOnWebsite?: boolean;
+}
+
+export interface CruisePromotion {
+  id: string;
+  connectionId: string;
+  sailingId: string;
+  externalId: string;
+  externalVersionId?: string;
+  fareCode?: string;
+  name: string;
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  shortDescription?: string;
+  richDescription?: string;
+  termsAndConditions?: string;
+  discount?: CruisePromotionDiscount;
+  savingsNote?: string;
+  savingsUnit?: string;
+  validFrom?: IsoDateTime;
+  validUntil?: IsoDateTime;
+  stackable?: boolean;
+  eligibility?: CruisePromotionEligibility;
+  conditions?: JsonObject;
+  meta?: JsonObject;
+}
+
 export type CruiseBookingMode = "inquiry" | "reserve";
 
 export type CruiseBookingStatus =
@@ -1424,8 +1469,12 @@ export interface CabinPricing {
   fareCode?: string;
   pricePerPerson: ConnectMoney;
   totalPrice: ConnectMoney;
+  originalPricePerPerson?: ConnectMoney;
+  originalTotalPrice?: ConnectMoney;
   components: CruiseFareComponent[];
+  promotionExternalIds?: string[];
   availability: CruisePriceAvailability;
+  availableUnits?: number | null;
   bookableUntil?: IsoDateTime;
   cancellationPolicy: CruiseCancellationPolicy;
   refreshedAt: IsoDateTime;
@@ -1449,7 +1498,10 @@ export interface CruiseSearchQuery {
 export interface CruiseOfferPricing {
   pricePerPerson: ConnectMoney;
   totalPrice: ConnectMoney;
+  originalPricePerPerson?: ConnectMoney;
+  originalTotalPrice?: ConnectMoney;
   components: CruiseFareComponent[];
+  promotionExternalIds?: string[];
 }
 
 export interface CruiseOffer {
@@ -1462,6 +1514,8 @@ export interface CruiseOffer {
   fareCode?: string;
   occupancy: CruisePassengerOccupancy;
   pricing: CruiseOfferPricing;
+  availableUnits?: number | null;
+  promotions?: CruisePromotion[];
   cancellationPolicy: CruiseCancellationPolicy;
   expiresAt: IsoDateTime;
   bookableUntil?: IsoDateTime;
@@ -1659,6 +1713,11 @@ export interface ListSailingPricingQuery {
   cabinCategoryExternalId?: string;
   fareCode?: string;
   occupancySignature?: string;
+  limit?: number;
+}
+
+export interface ListSailingPromotionsQuery {
+  fareCode?: string;
   limit?: number;
 }
 

@@ -39,7 +39,7 @@ data plane for inventory, bookings, and flights.
 - `bookings` — cross-connection `listAll` plus per-connection `list`, `get`,
   `create`, `confirm`, `cancel`, `listActivities`
 - `cruises` / `cruiseBookings` — cruise catalog, search, lock, inquiry, and
-  booking lifecycle routes
+  booking lifecycle routes, including sailing pricing and promotions
 - `health` — per-connection sync status
 
 Per-connection cruise reads return `ConnectCruiseRow` records, including

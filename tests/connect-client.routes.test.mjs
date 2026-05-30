@@ -34,10 +34,11 @@ test("connect client unwraps `data` for control-plane reads", async () => {
   });
 
   const operators = await client.operators.list();
-  assert.deepEqual(operators, [
-    { id: "op_1", slug: "alpine", name: "Alpine" },
-  ]);
-  assert.equal(recorder.calls[0].url, "https://api.voyantjs.com/connect/v1/operators");
+  assert.deepEqual(operators, [{ id: "op_1", slug: "alpine", name: "Alpine" }]);
+  assert.equal(
+    recorder.calls[0].url,
+    "https://api.voyantjs.com/connect/v1/operators",
+  );
   assert.equal(recorder.calls[0].method, "GET");
   assert.equal(
     recorder.calls[0].headers.get("authorization"),
@@ -168,6 +169,33 @@ test("connect client domain namespaces target Connect-normalized routes", async 
   );
 });
 
+test("cruises namespace targets sailing pricing and promotions routes", async () => {
+  const recorder = createRecorder({ responseBody: [] });
+  const client = createVoyantConnectClient({
+    apiKey: "k",
+    fetch: recorder.fetch,
+  });
+
+  await client.cruises.listSailingPricing("conn_1", "sail_1", {
+    fareCode: "EARLY",
+    occupancySignature: "2a",
+    limit: 50,
+  });
+  await client.cruises.listSailingPromotions("conn_1", "sail_1", {
+    fareCode: "EARLY",
+    limit: 10,
+  });
+
+  assert.equal(
+    recorder.calls[0].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/sailings/sail_1/pricing?fareCode=EARLY&occupancySignature=2a&limit=50",
+  );
+  assert.equal(
+    recorder.calls[1].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/sailings/sail_1/promotions?fareCode=EARLY&limit=10",
+  );
+});
+
 test("products.list resolves operatorId from client default and serializes filters", async () => {
   const recorder = createRecorder({
     responseBody: { data: [{ id: "prod_1" }] },
@@ -264,7 +292,9 @@ test("accommodations namespace targets the new accommodations routes", async () 
 });
 
 test("stays namespace targets search/lock/confirm/cancel routes", async () => {
-  const recorder = createRecorder({ responseBody: { offers: [], connectionDiagnostics: [] } });
+  const recorder = createRecorder({
+    responseBody: { offers: [], connectionDiagnostics: [] },
+  });
   const client = createVoyantConnectClient({
     apiKey: "k",
     operatorId: "op_default",
@@ -401,7 +431,10 @@ test("connect client OAuth issueToken sends client_credentials body", async () =
     expires_in: 3600,
     scope: "operators:read",
   });
-  assert.equal(recorder.calls[0].url, "https://api.voyantjs.com/connect/v1/oauth/token");
+  assert.equal(
+    recorder.calls[0].url,
+    "https://api.voyantjs.com/connect/v1/oauth/token",
+  );
   assert.equal(recorder.calls[0].method, "POST");
   assert.deepEqual(JSON.parse(recorder.calls[0].body), {
     client_id: "ci",

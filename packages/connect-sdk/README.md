@@ -61,7 +61,10 @@ token first:
 ```ts
 import { createVoyantConnectClient } from "@voyantjs/connect-sdk";
 
-const tokenClient = createVoyantConnectClient({ apiKey: "unused", authScheme: null });
+const tokenClient = createVoyantConnectClient({
+  apiKey: "unused",
+  authScheme: null,
+});
 const { access_token } = await tokenClient.oauth.issueToken({
   clientId: process.env.VOYANT_CONNECT_CLIENT_ID!,
   clientSecret: process.env.VOYANT_CONNECT_CLIENT_SECRET!,
@@ -78,6 +81,7 @@ void me;
 Root groups on `VoyantConnectClient`:
 
 **Control plane**
+
 - `oauth`
 - `operators`
 - `connectorProviders`
@@ -91,6 +95,7 @@ Root groups on `VoyantConnectClient`:
 - `customConnectionRequests`
 
 **Data plane (Connect-normalized)**
+
 - `products` — cross-connection `list` / `get` plus per-connection
   `listOnConnection`, `getOnConnection`, `listOptions`, `listExtras`
 - `options` — `listUnits`, `listExtraConfigs`
@@ -98,11 +103,12 @@ Root groups on `VoyantConnectClient`:
 - `availability` — `list`, `calendar`
 - `bookings` — cross-connection `listAll` plus per-connection `list`,
   `get`, `create`, `confirm`, `cancel`, `listActivities`
-- `cruises` / `cruiseBookings` — cruise catalog, search, lock, inquiry, and
-  booking lifecycle routes
+- `cruises` / `cruiseBookings` — cruise catalog, search, lock, inquiry,
+  sailing pricing/promotions, and booking lifecycle routes
 - `health` — `get`
 
 **Flights**
+
 - `flights`
 
 ## Notes
