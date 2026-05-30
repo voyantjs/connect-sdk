@@ -296,8 +296,13 @@ test("connect adapter generic liveResolve includes price hints from availability
     currency: "EUR",
     currencyPrecision: 2,
   });
-  assert.equal(result.values.prod_1.lowestPriceCached, "99.00");
-  assert.equal(result.values.prod_1.lowestPriceCachedCurrency, "EUR");
+  assert.deepEqual(result.values.prod_1.price_from, {
+    amountMinor: 9900,
+    currency: "EUR",
+    currencyPrecision: 2,
+  });
+  assert.equal("lowestPriceCached" in result.values.prod_1, false);
+  assert.equal("lowestPriceCachedCurrency" in result.values.prod_1, false);
 });
 
 test("connect adapter getContent returns normalized cruise content for flat search docs", async () => {
@@ -510,8 +515,16 @@ test("connect adapter getContent prefers canonical cruise projection fields", as
   assert.equal(result.content.cruise.embarkation_port, "Bordeaux");
   assert.equal(result.content.cruise.disembarkation_port, "Lisbon");
   assert.equal(result.content.sailings.length, 1);
-  assert.equal(result.content.sailings[0].lowestPriceCached, "2400.00");
-  assert.equal(result.content.sailings[0].lowestPriceCachedCurrency, "EUR");
+  assert.deepEqual(result.content.sailings[0].price_from, {
+    amountMinor: 240000,
+    currency: "EUR",
+    currencyPrecision: 2,
+  });
+  assert.equal("lowestPriceCached" in result.content.sailings[0], false);
+  assert.equal(
+    "lowestPriceCachedCurrency" in result.content.sailings[0],
+    false,
+  );
   assert.equal(result.content.cabin_categories[0].name, "Balcony");
 });
 
@@ -609,10 +622,17 @@ test("connect adapter keeps cruise itinerary variants scoped to sailings", async
     result.content.sailings[1].itinerary_stops.map((stop) => stop.port_name),
     ["Cologne (Embark)", "Rudesheim"],
   );
-  assert.equal(result.content.sailings[0].lowestPriceCached, "2400.00");
-  assert.equal(result.content.sailings[0].lowestPriceCachedCurrency, "EUR");
-  assert.equal(result.content.sailings[1].lowestPriceCached, null);
-  assert.equal(result.content.sailings[1].lowestPriceCachedCurrency, null);
+  assert.deepEqual(result.content.sailings[0].price_from, {
+    amountMinor: 240000,
+    currency: "EUR",
+    currencyPrecision: 2,
+  });
+  assert.equal(result.content.sailings[1].price_from, null);
+  assert.equal("lowestPriceCached" in result.content.sailings[0], false);
+  assert.equal(
+    "lowestPriceCachedCurrency" in result.content.sailings[0],
+    false,
+  );
 });
 
 test("connect adapter fetches endpoint itinerary variants for every sailing", async () => {

@@ -231,6 +231,12 @@ verifyPublicPackage("packages/connect-cruises/package.json", {
   name: "@voyantjs/connect-cruises",
   descriptionKeyword: "cruises adapter",
   dependencies: { "@voyantjs/connect-sdk": "workspace:*" },
+  peerDependencies: {
+    "@voyantjs/cruises": ">=0.85.3 <1",
+  },
+  devDependencies: {
+    "@voyantjs/cruises": "^0.85.3",
+  },
 });
 verifyPublicPackage("packages/connect-adapter/package.json", {
   name: "@voyantjs/connect-adapter",
@@ -239,10 +245,10 @@ verifyPublicPackage("packages/connect-adapter/package.json", {
     "@voyantjs/connect-sdk": "workspace:*",
   },
   peerDependencies: {
-    "@voyantjs/catalog": ">=0.85.0 <1",
+    "@voyantjs/catalog": ">=0.85.3 <1",
   },
   devDependencies: {
-    "@voyantjs/catalog": ">=0.85.0 <1",
+    "@voyantjs/catalog": "^0.85.3",
   },
 });
 verifyPrivatePackage("packages/sdk-core/package.json");

@@ -72,7 +72,7 @@ connection that emitted the projection.
 Discovery reads Connect search documents and emits catalog projections with
 stable provenance plus field-policy-aligned keys such as `name`, `source.kind`,
 `source.ref`, `seller.operator_id`, `thumbnailUrl`, `cruiseType`, `nights`, and
-`lowestPriceCached` where Connect provides the underlying data.
+`price_from` where Connect provides the underlying minor-unit money data.
 `source_connection_id` is always populated from the Connect connection so
 quote, reserve, cancel, and status calls route back to the same registered
 connection that produced the projection.

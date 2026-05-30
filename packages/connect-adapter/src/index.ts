@@ -354,8 +354,8 @@ export function mapSearchDocumentToProjection(
       tags: getStringArray(payload, "tags"),
       image_url: getString(payload, "imageUrl") ?? null,
       price_from: priceFrom,
-      lowestPriceCached: moneyToDecimalString(priceFrom),
-      lowestPriceCachedCurrency: getString(priceFrom ?? {}, "currency") ?? null,
+      priceFromAmountMinor: getNumber(priceFrom ?? {}, "amountMinor"),
+      priceFromCurrency: getString(priceFrom ?? {}, "currency") ?? null,
       cruiseType: normalizeCruiseType(getString(payload, "cruiseType")),
       nights: getNumber(payload, "nights"),
       embarkationPortCode: getString(payload, "embarkationPortCode") ?? null,
@@ -521,9 +521,6 @@ async function liveResolveAvailability(
           availability: slots,
           price: lowestSlotPrice(slots),
           price_from: lowestSlotPrice(slots),
-          lowestPriceCached: moneyToDecimalString(lowestSlotPrice(slots)),
-          lowestPriceCachedCurrency:
-            getString(lowestSlotPrice(slots) ?? {}, "currency") ?? null,
           refreshed_at: new Date().toISOString(),
         };
       } catch {
@@ -985,9 +982,7 @@ function toCruiseContentSailing(
       "disembarkationPortCode",
     ),
     itinerary_stops: extras.itineraryStops,
-    lowestPriceCached: moneyToDecimalString(extras.lowestPrice),
-    lowestPriceCachedCurrency:
-      getString(extras.lowestPrice ?? {}, "currency") ?? null,
+    price_from: extras.lowestPrice,
   };
 }
 
@@ -1529,21 +1524,6 @@ function moneyAmountMinor(money: JsonRecord): number {
   return typeof value === "number" && Number.isFinite(value)
     ? value
     : Number.POSITIVE_INFINITY;
-}
-
-function moneyToDecimalString(money: JsonRecord | null): string | null {
-  if (!money) return null;
-  const amountMinor = money.amountMinor;
-  const currencyPrecision = money.currencyPrecision;
-  if (
-    typeof amountMinor !== "number" ||
-    !Number.isFinite(amountMinor) ||
-    typeof currencyPrecision !== "number" ||
-    !Number.isInteger(currencyPrecision)
-  ) {
-    return null;
-  }
-  return (amountMinor / 10 ** currencyPrecision).toFixed(currencyPrecision);
 }
 
 function connectBookingStatusToReserveStatus(

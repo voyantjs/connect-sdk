@@ -70,6 +70,9 @@ const packages = [
     dependencies: {
       "@voyantjs/connect-sdk": connectSdkVersion,
     },
+    peerDependencies: {
+      "@voyantjs/cruises": ">=0.85.3 <1",
+    },
     bundleDependencies: undefined,
     bundledFiles: [],
   },
@@ -80,7 +83,7 @@ const packages = [
       "@voyantjs/connect-sdk": connectSdkVersion,
     },
     peerDependencies: {
-      "@voyantjs/catalog": ">=0.85.0 <1",
+      "@voyantjs/catalog": ">=0.85.3 <1",
     },
     bundleDependencies: undefined,
     bundledFiles: [],
