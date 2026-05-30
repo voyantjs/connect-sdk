@@ -1,5 +1,11 @@
 # @voyantjs/connect-sdk
 
+## 0.1.6
+
+### Patch Changes
+
+- 9f31956: Expose cruise sailing promotions and enriched sailing pricing fields in the Connect SDK.
+
 ## 0.1.5
 
 ### Patch Changes
