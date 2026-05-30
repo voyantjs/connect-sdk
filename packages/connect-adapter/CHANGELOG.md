@@ -1,5 +1,11 @@
 # @voyantjs/connect-adapter
 
+## 0.2.10
+
+### Patch Changes
+
+- d37e299: Expose cruise sailing cabin option pricing and qualitative availability in normalized `cruises/v1` content.
+
 ## 0.2.9
 
 ### Patch Changes
