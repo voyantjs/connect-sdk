@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/connect-cruises",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Voyant Connect cruises adapter for Voyant deployments.",
   "license": "FSL-1.1-Apache-2.0",
   "repository": {

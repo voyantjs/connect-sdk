@@ -1,5 +1,13 @@
 # @voyantjs/connect-adapter
 
+## 0.2.6
+
+### Patch Changes
+
+- 306b849: Expose canonical cruise projection/provenance fields on Connect cruise rows and prefer those fields when normalizing adapter cruise content.
+- Updated dependencies [306b849]
+  - @voyantjs/connect-sdk@0.1.4
+
 ## 0.2.5
 
 ### Patch Changes
