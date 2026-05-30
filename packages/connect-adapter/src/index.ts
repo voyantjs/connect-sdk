@@ -956,6 +956,7 @@ function toCruiseContentSailing(
   const endDate =
     getString(sailing, "returnDate") ?? getString(payload, "returnDate");
   if (!sourceRef || !startDate || !endDate) return null;
+  const price = cruiseContentPriceFields(extras.lowestPrice);
   return {
     id: sourceRef,
     source_ref: sourceRef,
@@ -982,8 +983,22 @@ function toCruiseContentSailing(
       "disembarkationPortCode",
     ),
     itinerary_stops: extras.itineraryStops,
-    price_from: extras.lowestPrice,
+    lowest_price_cents: price.lowest_price_cents,
+    currency: price.currency,
   };
+}
+
+function cruiseContentPriceFields(price: JsonRecord | null): {
+  lowest_price_cents: number | null;
+  currency: string | null;
+} {
+  if (!price) return { lowest_price_cents: null, currency: null };
+  const amountMinor = getNumber(price, "amountMinor");
+  const currency = getString(price, "currency");
+  if (amountMinor === null || !Number.isInteger(amountMinor) || !currency) {
+    return { lowest_price_cents: null, currency: null };
+  }
+  return { lowest_price_cents: amountMinor, currency };
 }
 
 function toCruiseContentCabinCategory(category: JsonRecord): JsonRecord | null {

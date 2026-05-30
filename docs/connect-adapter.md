@@ -90,6 +90,11 @@ shape with `content_schema_version: "cruises/v1"`:
 - `itinerary_stops`
 - `policies`
 
+Each sailing emits flattened sourced-content browse price fields:
+`lowest_price_cents` and `currency`. Both are populated from the same Connect
+minor-unit money object when a browse price is available; otherwise both are
+`null`.
+
 When Connect has no sailings or prices for a cruise, those arrays remain empty
 while the durable cruise description, media, ship, and policy content still
 flows through the catalog content plane.

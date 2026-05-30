@@ -515,11 +515,9 @@ test("connect adapter getContent prefers canonical cruise projection fields", as
   assert.equal(result.content.cruise.embarkation_port, "Bordeaux");
   assert.equal(result.content.cruise.disembarkation_port, "Lisbon");
   assert.equal(result.content.sailings.length, 1);
-  assert.deepEqual(result.content.sailings[0].price_from, {
-    amountMinor: 240000,
-    currency: "EUR",
-    currencyPrecision: 2,
-  });
+  assert.equal(result.content.sailings[0].lowest_price_cents, 240000);
+  assert.equal(result.content.sailings[0].currency, "EUR");
+  assert.equal("price_from" in result.content.sailings[0], false);
   assert.equal("lowestPriceCached" in result.content.sailings[0], false);
   assert.equal(
     "lowestPriceCachedCurrency" in result.content.sailings[0],
@@ -622,12 +620,12 @@ test("connect adapter keeps cruise itinerary variants scoped to sailings", async
     result.content.sailings[1].itinerary_stops.map((stop) => stop.port_name),
     ["Cologne (Embark)", "Rudesheim"],
   );
-  assert.deepEqual(result.content.sailings[0].price_from, {
-    amountMinor: 240000,
-    currency: "EUR",
-    currencyPrecision: 2,
-  });
-  assert.equal(result.content.sailings[1].price_from, null);
+  assert.equal(result.content.sailings[0].lowest_price_cents, 240000);
+  assert.equal(result.content.sailings[0].currency, "EUR");
+  assert.equal("price_from" in result.content.sailings[0], false);
+  assert.equal(result.content.sailings[1].lowest_price_cents, null);
+  assert.equal(result.content.sailings[1].currency, null);
+  assert.equal("price_from" in result.content.sailings[1], false);
   assert.equal("lowestPriceCached" in result.content.sailings[0], false);
   assert.equal(
     "lowestPriceCachedCurrency" in result.content.sailings[0],
