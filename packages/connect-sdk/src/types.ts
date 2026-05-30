@@ -1616,7 +1616,10 @@ export interface OperatorCruiseSummary {
   embarkationPortCode: string | null;
   disembarkationPortCode: string | null;
   locale: string;
-  payload: JsonObject;
+  market: string | null;
+  currency: string | null;
+  priceFromAmountMinor: number | null;
+  priceFromCurrency: string | null;
   sourceKind: string | null;
   sourceProvider: string | null;
   sourceConnectionId: string | null;
@@ -1627,8 +1630,7 @@ export interface OperatorCruiseSummary {
   projectionSchemaVersion: string | null;
   projectionEtag: string | null;
   projectionSeenAt: IsoDateTime | null;
-  market: string | null;
-  currency: string | null;
+  payload: JsonObject;
   lastSyncedAt: IsoDateTime;
   updatedAt: IsoDateTime;
   providerKey: string | null;

@@ -428,6 +428,7 @@ test("connect adapter getContent prefers canonical cruise projection fields", as
         embarkationPort: { name: "Legacy embark" },
       },
       projection: {
+        source_ref: "cruise:308_54-until-2026:en",
         name: "Wine Roads of France & Portugal",
         status: "active",
         description: "Projection description",
@@ -448,6 +449,8 @@ test("connect adapter getContent prefers canonical cruise projection fields", as
         returnDate: "2026-06-13",
         nights: 12,
         salesStatus: "available",
+        priceFromAmountMinor: 240000,
+        priceFromCurrency: "EUR",
         payload: {
           itinerary: [{ dayNumber: 1, portName: "Bordeaux" }],
         },
@@ -507,6 +510,8 @@ test("connect adapter getContent prefers canonical cruise projection fields", as
   assert.equal(result.content.cruise.embarkation_port, "Bordeaux");
   assert.equal(result.content.cruise.disembarkation_port, "Lisbon");
   assert.equal(result.content.sailings.length, 1);
+  assert.equal(result.content.sailings[0].lowestPriceCached, "2400.00");
+  assert.equal(result.content.sailings[0].lowestPriceCachedCurrency, "EUR");
   assert.equal(result.content.cabin_categories[0].name, "Balcony");
 });
 
