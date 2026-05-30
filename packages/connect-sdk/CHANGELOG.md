@@ -1,5 +1,11 @@
 # @voyantjs/connect-sdk
 
+## 0.1.5
+
+### Patch Changes
+
+- 10d4451: Expose cruise price-from fields on operator cruise summaries and normalize sailing price-from values from canonical Connect price columns.
+
 ## 0.1.4
 
 ### Patch Changes
