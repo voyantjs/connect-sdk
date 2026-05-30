@@ -652,6 +652,7 @@ async function getCruiseContentFromConnect(
   const canonicalSourceRef =
     getString(cruise, "sourceRef") ??
     getString(getRecord(cruise, "projection"), "sourceRef") ??
+    getString(getRecord(cruise, "projection"), "source_ref") ??
     getString(cruise, "externalId") ??
     preferredSourceRefForEntityId(request.entity_id) ??
     request.entity_id;
@@ -1055,10 +1056,35 @@ function lowestPriceFromSailing(sailing: JsonRecord): JsonRecord | null {
   const payload = getRecord(sailing, "payload");
   return (
     getRecordOrNull(sailing, "priceFrom") ??
+    moneyFromMinorFields(
+      sailing,
+      "priceFromAmountMinor",
+      "priceFromCurrency",
+    ) ??
     getRecordOrNull(payload, "priceFrom") ??
+    moneyFromMinorFields(
+      payload,
+      "priceFromAmountMinor",
+      "priceFromCurrency",
+    ) ??
     getRecordOrNull(sailing, "lowestPrice") ??
     getRecordOrNull(payload, "lowestPrice")
   );
+}
+
+function moneyFromMinorFields(
+  record: JsonRecord,
+  amountKey: string,
+  currencyKey: string,
+): JsonRecord | null {
+  const amountMinor = getNumber(record, amountKey);
+  const currency = getString(record, currencyKey);
+  if (amountMinor === null || !currency) return null;
+  return {
+    amountMinor,
+    currency,
+    currencyPrecision: 2,
+  };
 }
 
 function toCruiseContentPolicies(cruise: JsonRecord): JsonRecord[] {
